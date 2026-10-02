@@ -270,6 +270,8 @@ const EPS = 1e-8;
 
 function notify(text) { $("status").textContent = text; }
 
+function round2(v) { return Math.round(v * 100) / 100; }
+  
 function gridStep() {
 const value = $("grid").value;
 if (value !== "auto") return Number(value);
