@@ -903,9 +903,9 @@ const f = selectedObject();
 if (f) {
 insp.style.display = "block";
 $("inspName").value = f.name || "";
-$("inspW").value = f.w;
-$("inspD").value = f.d;
-$("inspH").value = f.h;
+$("inspW").value = round2(f.w);
+$("inspD").value = round2(f.d);
+$("inspH").value = round2(f.h);
 $("inspColor").value = f.color;
 return;
     }
