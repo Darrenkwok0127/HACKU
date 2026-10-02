@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interior Designer</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 14px system-ui, sans-serif;
+    color: #203044;
+    background: #eef2f6;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 12px;
+    background: white;
+    border-bottom: 1px solid #d9e1e9;
+  }
+  button, select, input {
+    font: inherit;
+    padding: 7px 9px;
+    border: 1px solid #c7d1dc;
+    border-radius: 6px;
+    background: white;
+  }
+  button { cursor: pointer; }
+  button.active { background: #2563eb; color: white; }
+  input { width: 72px; }
+  main {
+    display: flex;
+    height: calc(100dvh - 140px);
+    min-height: 420px;
+  }
+  aside {
+    width: 205px;
+    flex-shrink: 0;
+    padding: 14px;
+    overflow: auto;
+    border-right: 1px solid #d9e1e9;
+    background: #f8fafc;
+  }
+  h3 { margin: 0 0 12px; }
+  .item {
+    padding: 10px;
+    margin-bottom: 8px;
+    border: 1px solid #cdd7e2;
+    border-radius: 7px;
+    background: white;
+    cursor: grab;
+  }
+  .item small { display: block; color: #64748b; margin-top: 4px; }
+  .help { color: #526276; font-size: 12px; line-height: 1.6; }
+  #stage { position: relative; flex: 1; min-width: 0; }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+  #badge {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    padding: 7px 10px;
+    background: #ffffffed;
+    border: 1px solid #d9e1e9;
+    border-radius: 6px;
+    pointer-events: none;
+  }
+  footer {
+    padding: 10px 14px;
+    background: white;
+    border-top: 1px solid #d9e1e9;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <strong>Interior Designer</strong>
+  <button id="select" class="active">Select / Move</button>
+  <button id="wall">Draw wall</button>
+  <button id="door">Add door</button>
+
+  <label>Grid
+    <select id="grid">
+      <option value="auto">Auto</option>
+      <option value="0.1">0.1 m</option>
+      <option value="0.05">0.05 m</option>
+      <option value="0.01">0.01 m</option>
+    </select>
+  </label>
+
+  <label>Door width
+    <input id="doorWidth" type="number"
+           min="0.4" max="2.4" step="0.05" value="0.8"> m
+  </label>
+
+  <button id="rotate">Rotate / Flip</button>
+  <button id="remove">Delete</button>
+  <button id="view">2.5D preview</button>
+  <button id="fit">Fit view</button>
+  <button id="save">Save</button>
+  <button id="load">Load</button>
+  <button id="export">Export JSON</button>
+  <button id="clear">Clear</button>
+</header>
+
+<main>
+  <aside>
+    <h3>Furniture</h3>
+    <div id="palette"></div>
+    <p class="help">
+      Drag furniture onto the 2D plan.<br><br>
+      <b>Draw wall:</b> drag from start to end.<br>
+      Hold <b>Shift</b> for horizontal/vertical walls.<br><br>
+      <b>Add door:</b> click a wall.<br>
+      <b>Select / Move:</b> drag furniture or a door.<br>
+      <b>R:</b> rotate furniture or flip door swing.<br>
+      <b>Delete:</b> remove selection.<br><br>
+      <b>Mouse wheel:</b> zoom.<br>
+      <b>Space + drag</b> or right-drag: pan.<br><br>
+      The 2.5D preview uses 1.1 m cutaway walls
+      so you can see inside.
+    </p>
+  </aside>
+
+  <div id="stage">
+    <canvas id="canvas"></canvas>
+    <div id="badge"></div>
+  </div>
+</main>
+
+<footer id="status">
+  Draw a room or modify the example layout.
+  All measurements are in metres.
+</footer>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const canvas = $("canvas");
+const ctx = canvas.getContext("2d");
+
+const catalog = {
+  sofa:    { name:"Sofa",    w:2.1,  d:0.9,  h:0.8,  color:"#80a9d4" },
+  bed:     { name:"Bed",     w:1.5,  d:2.0,  h:0.55, color:"#b6a1d5" },
+  table:   { name:"Table",   w:1.4,  d:0.8,  h:0.75, color:"#d6ad78" },
+  chair:   { name:"Chair",   w:0.5,  d:0.5,  h:0.8,  color:"#e1bd89" },
+  desk:    { name:"Desk",    w:1.2,  d:0.6,  h:0.75, color:"#b7a184" },
+  cabinet: { name:"Cabinet", w:1.0,  d:0.45, h:1.8,  color:"#a9b8c7" },
+  bath:    { name:"Bath",    w:0.75, d:1.7,  h:0.55, color:"#9ed4dd" },
+  toilet:  { name:"Toilet",  w:0.4,  d:0.7,  h:0.7,  color:"#c4dce2" },
+  sink:    { name:"Sink",    w:0.6,  d:0.45, h:0.85, color:"#a6cbd7" }
+};
+
+let serial = 0;
+const uid = () => "object-" + (++serial);
+
+let walls = [], doors = [], furniture = [];
+let selected = null;
+let tool = "select";
+let iso = false;
+let space = false;
+let gesture = null;
+let draft = null;
+let width = 800, height = 600;
+let scale = 90;
+let camera = { x: 0, y: 0 };
+
+const WALL_THICKNESS = 0.12;
+const CUTAWAY_HEIGHT = 1.1;
+const EPS = 1e-8;
+
+function notify(text) { $("status").textContent = text; }
+
+function gridStep() {
+  const value = $("grid").value;
+  if (value !== "auto") return Number(value);
+  if (scale >= 600) return 0.01;
+  if (scale >= 120) return 0.05;
+  return 0.1;
+}
+
+function snap(p) {
+  const q = gridStep();
+  return {
+    x: Math.round(p.x / q) * q,
+    y: Math.round(p.y / q) * q
+  };
+}
+
+function screen(p, z = 0) {
+  if (!iso) {
+    return { x: camera.x + p.x * scale,
+             y: camera.y + p.y * scale };
+  }
+  return {
+    x: camera.x + (p.x - p.y) * 0.8660254 * scale,
+    y: camera.y + ((p.x + p.y) * 0.5 - z) * scale
+  };
+}
+
+function world(p) {
+  const x = (p.x - camera.x) / scale;
+  const y = (p.y - camera.y) / scale;
+  if (!iso) return { x, y };
+  return { x: y + x / 1.7320508, y: y - x / 1.7320508 };
+}
+
+function mouse(e) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function distance(a, b) { return Math.hypot(a.x-b.x, a.y-b.y); }
+
+function wallInfo(w) {
+  const length = distance(w.a, w.b);
+  return {
+    length,
+    ux: (w.b.x-w.a.x)/length,
+    uy: (w.b.y-w.a.y)/length
+  };
+}
+
+function along(w, t) {
+  return {
+    x: w.a.x + (w.b.x-w.a.x)*t,
+    y: w.a.y + (w.b.y-w.a.y)*t
+  };
+}
+
+function projectOnWall(p, w) {
+  const dx = w.b.x-w.a.x, dy = w.b.y-w.a.y;
+  const t = Math.max(0, Math.min(1,
+    ((p.x-w.a.x)*dx + (p.y-w.a.y)*dy)/(dx*dx+dy*dy)
+  ));
+  return { t, point: along(w,t), distance: distance(p,along(w,t)) };
+}
+
+function nearestWall(p) {
+  let best = null;
+  for (const w of walls) {
+    const hit = projectOnWall(p,w);
+    if (!best || hit.distance < best.distance) best = { ...hit, wall:w };
+  }
+  return best;
+}
+
+function furniturePoint(f, x, y) {
+  const c = Math.cos(f.angle), s = Math.sin(f.angle);
+  return { x:f.x+x*c-y*s, y:f.y+x*s+y*c };
+}
+
+function footprint(f) {
+  return [
+    furniturePoint(f,-f.w/2,-f.d/2),
+    furniturePoint(f, f.w/2,-f.d/2),
+    furniturePoint(f, f.w/2, f.d/2),
+    furniturePoint(f,-f.w/2, f.d/2)
+  ];
+}
+
+function insideFurniture(p,f) {
+  const dx=p.x-f.x, dy=p.y-f.y;
+  const c=Math.cos(f.angle), s=Math.sin(f.angle);
+  return Math.abs(dx*c+dy*s)<=f.w/2 &&
+         Math.abs(-dx*s+dy*c)<=f.d/2;
+}
+
+function polygon(points, fill, stroke="#506176", lineWidth=1) {
+  ctx.beginPath();
+  points.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y));
+  ctx.closePath();
+  if (fill) { ctx.fillStyle=fill; ctx.fill(); }
+  if (stroke) {
+    ctx.strokeStyle=stroke;
+    ctx.lineWidth=lineWidth;
+    ctx.stroke();
+  }
+}
+
+function line(a,b,color="#334155",lineWidth=1) {
+  ctx.beginPath();
+  ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+  ctx.strokeStyle=color; ctx.lineWidth=lineWidth;
+  ctx.stroke();
+}
+
+function textAt(text,p,color="#334155") {
+  ctx.font="12px system-ui";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillStyle=color;
+  ctx.fillText(text,p.x,p.y);
+}
+
+function prism(points,h,color,selectedObject=false) {
+  const bottom=points.map(p=>screen(p));
+  const top=points.map(p=>screen(p,h));
+
+  // Paint farther vertical faces first.
+  const faces=points.map((p,i) => {
+    const j=(i+1)%points.length;
+    return {
+      i,j,
+      depth:(p.x+p.y+points[j].x+points[j].y)/2
+    };
+  }).sort((a,b)=>a.depth-b.depth);
+
+  for (const {i,j} of faces) {
+    polygon([bottom[i],bottom[j],top[j],top[i]],color);
+    polygon([bottom[i],bottom[j],top[j],top[i]],
+            "rgba(0,0,0,0.10)",null);
+  }
+  polygon(top,color,selectedObject ? "#2563eb" : "#506176",
+          selectedObject ? 3 : 1);
+}
+
+function wallFootprint(w,t0,t1) {
+  const a=along(w,t0), b=along(w,t1);
+  const {ux,uy}=wallInfo(w);
+  const nx=-uy*WALL_THICKNESS/2, ny=ux*WALL_THICKNESS/2;
+  return [
+    {x:a.x+nx,y:a.y+ny}, {x:b.x+nx,y:b.y+ny},
+    {x:b.x-nx,y:b.y-ny}, {x:a.x-nx,y:a.y-ny}
+  ];
+}
+
+function solidWallSegments(w) {
+  const L=wallInfo(w).length;
+  const openings=doors.filter(d=>d.wallId===w.id)
+    .map(d=>[d.t-d.width/(2*L),d.t+d.width/(2*L)])
+    .sort((a,b)=>a[0]-b[0]);
+
+  let cursor=0;
+  const segments=[];
+  for (const [start,end] of openings) {
+    if (start>cursor) segments.push([cursor,start]);
+    cursor=Math.max(cursor,end);
+  }
+  if (cursor<1) segments.push([cursor,1]);
+  return segments;
+}
+
+function drawGrid() {
+  if (iso) return;
+  const step=gridStep();
+  const a=world({x:0,y:0}), b=world({x:width,y:height});
+  const firstX=Math.floor(a.x/step), lastX=Math.ceil(b.x/step);
+  const firstY=Math.floor(a.y/step), lastY=Math.ceil(b.y/step);
+
+  for (let i=firstX;i<=lastX;i++) {
+    const x=i*step;
+    const major=Math.abs(x-Math.round(x))<EPS;
+    line(screen({x,y:a.y}),screen({x,y:b.y}),
+         major ? "#c5d0dd" : "#e4eaf1",major ? 1.2 : 0.6);
+  }
+  for (let i=firstY;i<=lastY;i++) {
+    const y=i*step;
+    const major=Math.abs(y-Math.round(y))<EPS;
+    line(screen({x:a.x,y}),screen({x:b.x,y}),
+         major ? "#c5d0dd" : "#e4eaf1",major ? 1.2 : 0.6);
+  }
+}
+
+function drawDoor(d) {
+  const w=walls.find(w=>w.id===d.wallId);
+  if (!w) return;
+  const {length:L,ux,uy}=wallInfo(w);
+  const hinge=along(w,d.t-d.width/(2*L));
+  const closed=along(w,d.t+d.width/(2*L));
+  const nx=-uy*d.swing, ny=ux*d.swing;
+  const opened={x:hinge.x+nx*d.width,y:hinge.y+ny*d.width};
+  const color=selected?.id===d.id ? "#2563eb" : "#b7791f";
+
+  line(screen(hinge),screen(closed),"#c99a57",2);
+  line(screen(hinge),screen(opened),color,3);
+
+  ctx.beginPath();
+  for (let i=0;i<=24;i++) {
+    const angle=(i/24)*Math.PI/2;
+    const p=screen({
+      x:hinge.x+d.width*(ux*Math.cos(angle)+nx*Math.sin(angle)),
+      y:hinge.y+d.width*(uy*Math.cos(angle)+ny*Math.sin(angle))
+    });
+    if (!i) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+  }
+  ctx.setLineDash([4,3]);
+  ctx.strokeStyle=color; ctx.lineWidth=1; ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawFurniture2D(f) {
+  const chosen=selected?.id===f.id;
+  polygon(footprint(f).map(p=>screen(p)),f.color,
+          chosen ? "#2563eb" : "#506176",chosen ? 3 : 1);
+
+  // Useful visual details on selected furniture types.
+  const segment=(x1,y1,x2,y2) =>
+    line(screen(furniturePoint(f,x1,y1)),
+         screen(furniturePoint(f,x2,y2)),"#ffffff",2);
+
+  if (f.type==="bed") {
+    segment(-f.w/2,-f.d/2+0.4,f.w/2,-f.d/2+0.4);
+    segment(0,-f.d/2,0,-f.d/2+0.4);
+  }
+  if (f.type==="sofa") {
+    segment(-f.w/2,-f.d/2+0.2,f.w/2,-f.d/2+0.2);
+    segment(-f.w/6,-f.d/2+0.2,-f.w/6,f.d/2);
+    segment(f.w/6,-f.d/2+0.2,f.w/6,f.d/2);
+  }
+  if (scale*f.w>45) textAt(f.name,screen(f));
+}
+
+function render() {
+  ctx.clearRect(0,0,width,height);
+  ctx.fillStyle="#f8fafc";
+  ctx.fillRect(0,0,width,height);
+  drawGrid();
+
+  if (!iso) {
+    for (const w of walls) {
+      for (const [a,b] of solidWallSegments(w)) {
+        polygon(wallFootprint(w,a,b).map(p=>screen(p)),"#64748b",
+                selected?.id===w.id ? "#2563eb" : "#475569",
+                selected?.id===w.id ? 3 : 1);
+      }
+      const mid=screen(along(w,0.5));
+      textAt(wallInfo(w).length.toFixed(2)+" m",
+             {x:mid.x,y:mid.y-13});
+    }
+    doors.forEach(drawDoor);
+    furniture.forEach(drawFurniture2D);
+  } else {
+    // Simple painter's-order axonometric preview.
+    const objects=[];
+    for (const w of walls) {
+      for (const [a,b] of solidWallSegments(w)) {
+        const points=wallFootprint(w,a,b);
+        objects.push({
+          points, h:CUTAWAY_HEIGHT, color:"#cbd5e1",
+          id:w.id,
+          depth:points.reduce((sum,p)=>sum+p.x+p.y,0)/4
+        });
+      }
+    }
+    for (const f of furniture) {
+      objects.push({
+        points:footprint(f), h:f.h, color:f.color,
+        id:f.id, depth:f.x+f.y
+      });
+    }
+    doors.forEach(drawDoor);
+    objects.sort((a,b)=>a.depth-b.depth);
+    objects.forEach(o=>prism(o.points,o.h,o.color,selected?.id===o.id));
+  }
+
+  if (draft) {
+    line(screen(draft.a),screen(draft.b),"#2563eb",
+         Math.max(2,WALL_THICKNESS*scale));
+    const p=screen(draft.b);
+    textAt(distance(draft.a,draft.b).toFixed(2)+" m",
+           {x:p.x,y:p.y-18},"#2563eb");
+  }
+
+  $("badge").textContent=iso
+    ? "2.5D cutaway preview · drag to pan"
+    : `2D plan · Grid ${gridStep()} m · ${Math.round(scale)} px/m`;
+}
+
+function fitView() {
+  const points=[
+    ...walls.flatMap(w=>[w.a,w.b]),
+    ...furniture.flatMap(footprint)
+  ];
+  if (!points.length) points.push({x:0,y:0},{x:5,y:4});
+
+  camera={x:0,y:0}; scale=1;
+  const projected=points.flatMap(p=>
+    iso ? [screen(p),screen(p,2)] : [screen(p)]
+  );
+  const minX=Math.min(...projected.map(p=>p.x));
+  const maxX=Math.max(...projected.map(p=>p.x));
+  const minY=Math.min(...projected.map(p=>p.y));
+  const maxY=Math.max(...projected.map(p=>p.y));
+  scale=Math.max(60,Math.min(1600,
+    (width-100)/Math.max(1,maxX-minX),
+    (height-100)/Math.max(1,maxY-minY)
+  ));
+  camera={
+    x:width/2-(minX+maxX)/2*scale,
+    y:height/2-(minY+maxY)/2*scale
+  };
+  render();
+}
+
+function canPlaceDoor(d,w,t) {
+  const L=wallInfo(w).length;
+  if (d.width>L-0.1) return false;
+  return !doors.some(other=>
+    other.id!==d.id && other.wallId===w.id &&
+    Math.abs(other.t-t)*L < (other.width+d.width)/2+0.05
+  );
+}
+
+function doorPosition(d,w,p) {
+  const L=wallInfo(w).length;
+  const margin=(d.width/2+0.05)/L;
+  if (margin>0.5) return null;
+  const raw=projectOnWall(p,w).t*L;
+  const snapped=Math.round(raw/gridStep())*gridStep()/L;
+  const t=Math.max(margin,Math.min(1-margin,snapped));
+  return canPlaceDoor(d,w,t) ? t : null;
+}
+
+function addDoor(p) {
+  const hit=nearestWall(p);
+  if (!hit || hit.distance>Math.max(0.15,12/scale)) {
+    notify("Click close to a wall to add a door."); return;
+  }
+  const doorWidth=Number($("doorWidth").value);
+  if (!Number.isFinite(doorWidth) || doorWidth<0.4 || doorWidth>2.4) {
+    notify("Choose a door width between 0.4 m and 2.4 m."); return;
+  }
+  const d={id:uid(),wallId:hit.wall.id,width:doorWidth,t:0.5,swing:1};
+  const t=doorPosition(d,hit.wall,p);
+  if (t===null) {
+    notify("Not enough room here: doors need end clearance and cannot overlap.");
+    return;
+  }
+  d.t=t; doors.push(d);
+  selected={kind:"door",id:d.id};
+  notify("Door added. Use Select / Move to slide it along the wall.");
+  render();
+}
+
+function pick(p) {
+  // Doors take precedence inside their wall openings.
+  for (const d of [...doors].reverse()) {
+    const w=walls.find(w=>w.id===d.wallId);
+    const hit=projectOnWall(p,w);
+    if (hit.distance<Math.max(0.15,10/scale) &&
+        Math.abs(hit.t-d.t)*wallInfo(w).length<=d.width/2) {
+      return {kind:"door",id:d.id};
+    }
+  }
+  for (const f of [...furniture].reverse()) {
+    if (insideFurniture(p,f)) return {kind:"furniture",id:f.id};
+  }
+  const hit=nearestWall(p);
+  if (hit && hit.distance<Math.max(0.1,8/scale))
+    return {kind:"wall",id:hit.wall.id};
+  return null;
+}
+
+function selectedObject() {
+  if (!selected) return null;
+  const list=selected.kind==="wall" ? walls :
+             selected.kind==="door" ? doors : furniture;
+  return list.find(o=>o.id===selected.id);
+}
+
+function rotateSelected() {
+  if (iso) return;
+  const o=selectedObject();
+  if (!o) return;
+  if (selected.kind==="furniture") o.angle+=Math.PI/2;
+  if (selected.kind==="door") o.swing*=-1;
+  render();
+}
+
+function deleteSelected() {
+  if (iso || !selected) return;
+  const {kind,id}=selected;
+  if (kind==="wall") {
+    walls=walls.filter(w=>w.id!==id);
+    doors=doors.filter(d=>d.wallId!==id);
+  } else if (kind==="door") doors=doors.filter(d=>d.id!==id);
+  else furniture=furniture.filter(f=>f.id!==id);
+  selected=null; render();
+}
+
+function setTool(name) {
+  tool=name;
+  ["select","wall","door"].forEach(id=>
+    $(id).classList.toggle("active",id===name)
+  );
+}
+
+canvas.addEventListener("pointerdown",e=>{
+  if (![0,1,2].includes(e.button)) return;
+  e.preventDefault();
+  const m=mouse(e), p=world(m);
+  canvas.setPointerCapture(e.pointerId);
+
+  if (e.button!==0 || space || iso) {
+    gesture={kind:"pan",start:m,camera:{...camera}};
+    return;
+  }
+  if (tool==="wall") {
+    draft={a:snap(p),b:snap(p)};
+    gesture={kind:"wall"};
+  } else if (tool==="door") {
+    addDoor(p);
+  } else {
+    selected=pick(p);
+    const o=selectedObject();
+    if (selected?.kind==="furniture") {
+      gesture={kind:"furniture",object:o,
+               offset:{x:p.x-o.x,y:p.y-o.y}};
+    } else if (selected?.kind==="door") {
+      gesture={kind:"door",object:o};
+    }
+    render();
+  }
+});
+
+canvas.addEventListener("pointermove",e=>{
+  if (!gesture) return;
+  const m=mouse(e), p=world(m);
+
+  if (gesture.kind==="pan") {
+    camera={
+      x:gesture.camera.x+m.x-gesture.start.x,
+      y:gesture.camera.y+m.y-gesture.start.y
+    };
+  } else if (gesture.kind==="wall") {
+    draft.b=snap(p);
+    if (e.shiftKey) {
+      if (Math.abs(draft.b.x-draft.a.x)>Math.abs(draft.b.y-draft.a.y))
+        draft.b.y=draft.a.y;
+      else draft.b.x=draft.a.x;
+    }
+  } else if (gesture.kind==="furniture") {
+    const q=snap({
+      x:p.x-gesture.offset.x,
+      y:p.y-gesture.offset.y
+    });
+    Object.assign(gesture.object,q);
+  } else if (gesture.kind==="door") {
+    const d=gesture.object;
+    const w=walls.find(w=>w.id===d.wallId);
+    const t=doorPosition(d,w,p);
+    if (t!==null) d.t=t;
+  }
+  render();
+});
+
+canvas.addEventListener("pointerup",()=>{
+  if (gesture?.kind==="wall" && draft &&
+      distance(draft.a,draft.b)>=0.1) {
+    const w={id:uid(),a:{...draft.a},b:{...draft.b}};
+    walls.push(w);
+    selected={kind:"wall",id:w.id};
+    notify("Wall added. Its length is shown on the plan.");
+  }
+  gesture=null; draft=null; render();
+});
+
+canvas.addEventListener("pointercancel",()=>{
+  gesture=null; draft=null; render();
+});
+
+canvas.addEventListener("contextmenu",e=>e.preventDefault());
+
+canvas.addEventListener("wheel",e=>{
+  e.preventDefault();
+  if (gesture) return;
+  const m=mouse(e), anchor=world(m);
+  scale=Math.max(60,Math.min(1600,scale*Math.exp(-e.deltaY*0.001)));
+  const after=screen(anchor);
+  camera.x+=m.x-after.x;
+  camera.y+=m.y-after.y;
+  render();
+},{passive:false});
+
+for (const [type,f] of Object.entries(catalog)) {
+  const item=document.createElement("div");
+  item.className="item";
+  item.draggable=true;
+  item.innerHTML=`${f.name}<small>${f.w} × ${f.d} m</small>`;
+  item.addEventListener("dragstart",e=>{
+    e.dataTransfer.setData("text/plain",type);
+    e.dataTransfer.effectAllowed="copy";
+  });
+  $("palette").appendChild(item);
+}
+
+canvas.addEventListener("dragover",e=>{
+  if (!iso) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect="copy";
+  }
+});
+
+canvas.addEventListener("drop",e=>{
+  e.preventDefault();
+  if (iso) return;
+  const type=e.dataTransfer.getData("text/plain");
+  if (!Object.hasOwn(catalog,type)) return;
+  const p=snap(world(mouse(e)));
+  const f={...catalog[type],id:uid(),type,x:p.x,y:p.y,angle:0};
+  furniture.push(f);
+  selected={kind:"furniture",id:f.id};
+  setTool("select");
+  notify(`${f.name} added. Drag to move; press R to rotate.`);
+  render();
+});
+
+["select","wall","door"].forEach(id=>$(id).onclick=()=>setTool(id));
+$("grid").onchange=render;
+$("rotate").onclick=rotateSelected;
+$("remove").onclick=deleteSelected;
+$("fit").onclick=fitView;
+
+$("view").onclick=()=>{
+  iso=!iso;
+  gesture=null; draft=null;
+  $("view").textContent=iso ? "Back to 2D editing" : "2.5D preview";
+  notify(iso
+    ? "2.5D preview: wheel to zoom, drag to pan. Return to 2D to edit."
+    : "2D editing enabled.");
+  fitView();
+};
+
+function designData() {
+  return {version:1,units:"metres",serial,walls,doors,furniture};
+}
+
+$("save").onclick=()=>{
+  try {
+    localStorage.setItem("interior-designer-v1",JSON.stringify(designData()));
+    notify("Saved in this browser on this device.");
+  } catch {
+    notify("Browser storage is unavailable. Use Export JSON instead.");
+  }
+};
+
+$("load").onclick=()=>{
+  try {
+    const raw=localStorage.getItem("interior-designer-v1");
+    if (!raw) { notify("No saved design was found in this browser."); return; }
+    const data=JSON.parse(raw);
+    if (data.version!==1 || !Array.isArray(data.walls) ||
+        !Array.isArray(data.doors) || !Array.isArray(data.furniture)) {
+      throw new Error("Invalid save");
+    }
+    if (!confirm("Replace the current layout with your saved design?")) return;
+    walls=data.walls; doors=data.doors; furniture=data.furniture;
+    serial=data.serial;
+    selected=null; gesture=null; draft=null;
+    fitView(); notify("Saved design loaded.");
+  } catch {
+    notify("Could not load the saved design.");
+  }
+};
+
+$("export").onclick=()=>{
+  const blob=new Blob([JSON.stringify(designData(),null,2)],
+                      {type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download="interior-design.json"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+
+$("clear").onclick=()=>{
+  if (!confirm("Clear the current design?")) return;
+  walls=[]; doors=[]; furniture=[];
+  selected=null; gesture=null; draft=null;
+  fitView();
+};
+
+function editingText(e) {
+  return ["INPUT","SELECT","TEXTAREA","BUTTON"].includes(e.target.tagName);
+}
+
+window.addEventListener("keydown",e=>{
+  if (editingText(e)) return;
+  if (e.code==="Space") { space=true; e.preventDefault(); }
+  if (e.key==="Delete" || e.key==="Backspace") {
+    e.preventDefault(); deleteSelected();
+  }
+  if (e.key.toLowerCase()==="r") rotateSelected();
+  if (e.key==="Escape") {
+    gesture=null; draft=null; selected=null; render();
+  }
+});
+window.addEventListener("keyup",e=>{
+  if (e.code==="Space") space=false;
+});
+window.addEventListener("blur",()=>{
+  space=false; gesture=null; draft=null; render();
+});
+
+// Starter room: 5 m × 4 m, measured between wall centre lines.
+const corners=[{x:0,y:0},{x:5,y:0},{x:5,y:4},{x:0,y:4}];
+walls=corners.map((a,i)=>({
+  id:uid(),a:{...a},b:{...corners[(i+1)%4]}
+}));
+doors.push({id:uid(),wallId:walls[2].id,t:0.25,width:0.8,swing:1});
+furniture.push(
+  {...catalog.sofa,id:uid(),type:"sofa",x:1.5,y:0.8,angle:0},
+  {...catalog.table,id:uid(),type:"table",x:1.5,y:2.1,angle:0},
+  {...catalog.bed,id:uid(),type:"bed",x:3.9,y:1.3,angle:0}
+);
+
+let firstResize=true;
+new ResizeObserver(()=>{
+  const rect=$("stage").getBoundingClientRect();
+  const oldWidth=width,oldHeight=height;
+  width=rect.width; height=rect.height;
+  const dpr=window.devicePixelRatio || 1;
+  canvas.width=Math.round(width*dpr);
+  canvas.height=Math.round(height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  if (firstResize) { firstResize=false; fitView(); }
+  else {
+    camera.x+=(width-oldWidth)/2;
+    camera.y+=(height-oldHeight)/2;
+    render();
+  }
+}).observe($("stage"));
+</script>
+</body>
+</html>
