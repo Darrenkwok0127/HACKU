@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2.5D Floor Plan Editor</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #eef1f5;
+      margin: 20px;
+      color: #222;
+    }
+    h1 {
+      font-size: 1.3rem;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .panel {
+      background: #fff;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    canvas#plan {
+      display: block;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: crosshair;
+    }
+    .actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 6px 14px;
+      border: 0;
+      border-radius: 6px;
+      background: #3498db;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    #viewer {
+      width: 600px;
+      height: 500px;
+      border: 1px solid #ccc;
+      background: #fafafa;
+      border-radius: 6px;
+    }
+    #status {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>2.5D Floor Plan Editor</h1>
+  <div class="container">
+    <div class="panel">
+      <h3>2D Drawing — drag to draw walls</h3>
+      <canvas id="plan" width="600" height="500"></canvas>
+      <div class="actions">
+        <button id="undoBtn">Undo last wall</button>
+        <button id="clearBtn">Clear all</button>
+        <label>
+          <input type="checkbox" id="snap" checked /> Snap to grid (0.5 m)
+        </label>
+        <label>
+          Wall height:
+          <input
+            type="number"
+            id="height"
+            value="2.8"
+            min="1"
+            max="10"
+            step="0.1"
+            style="width: 70px"
+          /> m
+        </label>
+      </div>
+      <div id="status">Drag on the canvas to draw a wall. Release to finish.</div>
+    </div>
+    <div class="panel">
+      <h3>3D Preview</h3>
+      <div id="viewer"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js">
+  </script>
+
+  <script>
+    (function() {
+      'use strict';
+
+      const canvas = document.getElementById('plan');
+      const ctx = canvas.getContext('2d');
+      const statusEl = document.getElementById('status');
+      const undoBtn = document.getElementById('undoBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const snapCheck = document.getElementById('snap');
+      const heightInput = document.getElementById('height');
+
+      const pxPerMeter = 40;
+      const gridStep = 20; // 20px = 0.5m
+      const origin = { x: canvas.width / 2, y: canvas.height / 2 };
+
+      let walls = [];
+      let drawing = false;
+      let startPoint = null;
+      let currentPoint = null;
+
+      function toCanvasXY(e) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: (e.clientX - rect.left) * (canvas.width / rect.width),
+          y: (e.clientY - rect.top) * (canvas.height / rect.height)
+        };
+      }
+
+      function snapToEndpoint(p, maxDist) {
+        let best = null;
+        let bestDist = maxDist * maxDist;
+
+        walls.forEach(function(w) {
+          [
+            { x: w.x1, y: w.y1 },
+            { x: w.x2, y: w.y2 }
+          ].forEach(function(ep) {
+            const dx = p.x - ep.x;
+            const dy = p.y - ep.y;
+            const d = dx * dx + dy * dy;
+            if (d < bestDist) {
+              bestDist = d;
+              best = ep;
+            }
+          });
+        });
+
+        return best;
+      }
+
+      function getSnapped(e) {
+        let p = toCanvasXY(e);
+
+        // Prefer connecting to an existing wall endpoint
+        const ep = snapToEndpoint(p, 10);
+        if (ep) return { x: ep.x, y: ep.y };
+
+        // Otherwise snap to grid
+        if (snapCheck.checked) {
+          p.x = Math.round(p.x / gridStep) * gridStep;
+          p.y = Math.round(p.y / gridStep) * gridStep;
+        }
+
+        return p;
+      }
+
+      function drawGrid() {
+        ctx.strokeStyle = '#e8edf2';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+
+        for (let x = 0; x <= canvas.width; x += gridStep) {
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
+        }
+        for (let y = 0; y <= canvas.height; y += gridStep) {
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+        }
+
+        ctx.stroke();
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+
+        // Draw existing walls
+        ctx.lineCap = 'round';
+
+        walls.forEach(function(w) {
+          ctx.strokeStyle = '#2c3e50';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(w.x1, w.y1);
+          ctx.lineTo(w.x2, w.y2);
+          ctx.stroke();
+
+          ctx.fillStyle = '#e74c3c';
+          ctx.beginPath();
+          ctx.arc(w.x1, w.y1, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(w.x2, w.y2, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Draw preview line while dragging
+        if (drawing && startPoint && currentPoint) {
+          ctx.strokeStyle = '#e74c3c';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([6, 4]);
+          ctx.beginPath();
+          ctx.moveTo(startPoint.x, startPoint.y);
+          ctx.lineTo(currentPoint.x, currentPoint.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.fillStyle = '#e74c3c';
+          ctx.beginPath();
+          ctx.arc(startPoint.x, startPoint.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(currentPoint.x, currentPoint.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // ---------- Three.js 3D setup ----------
+      let scene, camera, renderer, controls, wallGroup;
+      const viewer = document.getElementById('viewer');
+
+      function init3D() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf2f5f9);
+
+        camera = new THREE.PerspectiveCamera(
+          50,
+          viewer.clientWidth / viewer.clientHeight,
+          0.1,
+          100
+        );
+        camera.position.set(9, 8, 9);
+        camera.lookAt(0, 0, 0);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+        viewer.appendChild(renderer.domElement);
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 0, 0);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.1;
+        controls.update();
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambient);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        const grid = new THREE.GridHelper(20, 20, 0x9aa8b5, 0xd0d8e0);
+        scene.add(grid);
+
+        wallGroup = new THREE.Group();
+        scene.add(wallGroup);
+
+        animate();
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+
+      function disposeObject(obj) {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(function(m) { m.dispose(); });
+          } else {
+            obj.material.dispose();
+          }
+        }
+      }
+
+      function update3D() {
+        // Remove old walls
+        while (wallGroup.children.length) {
+          const child = wallGroup.children[0];
+          disposeObject(child);
+          wallGroup.remove(child);
+        }
+
+        const h = parseFloat(heightInput.value) || 2.8;
+        const thickness = 0.2;
+
+        walls.forEach(function(w) {
+          // Convert 2D canvas coordinates to 3D floor-plane coordinates
+          const ax = (w.x1 - origin.x) / pxPerMeter;
+          const az = (w.y1 - origin.y) / pxPerMeter;
+          const bx = (w.x2 - origin.x) / pxPerMeter;
+          const bz = (w.y2 - origin.y) / pxPerMeter;
+
+          const dx = bx - ax;
+          const dz = bz - az;
+          const length = Math.hypot(dx, dz);
+
+          if (length < 0.001) return;
+
+          // Slightly extend walls so corners overlap cleanly
+          const extLength = length + thickness;
+
+          const geo = new THREE.BoxGeometry(extLength, h, thickness);
+          const mat = new THREE.MeshPhongMaterial({
+            color: 0x8fb8de,
+            flatShading: true
+          });
+
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set((ax + bx) / 2, h / 2, (az + bz) / 2);
+
+          // Align box along the wall direction
+          if (Math.abs(dx) > 0.0001 || Math.abs(dz) > 0.0001) {
+            const dir = new THREE.Vector3(dx, 0, dz).normalize();
+            const quat = new THREE.Quaternion().setFromUnitVectors(
+              new THREE.Vector3(1, 0, 0),
+              dir
+            );
+            mesh.quaternion.copy(quat);
+          }
+
+          wallGroup.add(mesh);
+
+          // Add clean outline edges
+          const edgeGeo = new THREE.EdgesGeometry(geo);
+          const edgeMat = new THREE.LineBasicMaterial({ color: 0x34495e });
+          const edges = new THREE.LineSegments(edgeGeo, edgeMat);
+          edges.position.copy(mesh.position);
+          edges.quaternion.copy(mesh.quaternion);
+          wallGroup.add(edges);
+        });
+      }
+
+      // ---------- Events ----------
+      canvas.addEventListener('pointerdown', function(e) {
+        // Right-click removes the last wall
+        if (e.button === 2) {
+          undoWall();
+          return;
+        }
+
+        if (e.button !== 0) return;
+
+        const p = getSnapped(e);
+        drawing = true;
+        startPoint = p;
+        currentPoint = p;
+        canvas.setPointerCapture(e.pointerId);
+      });
+
+      canvas.addEventListener('pointermove', function(e) {
+        if (drawing) {
+          currentPoint = getSnapped(e);
+        }
+        draw();
+      });
+
+      canvas.addEventListener('pointerup', function(e) {
+        if (!drawing) return;
+
+        const p = getSnapped(e);
+
+        if (startPoint && (p.x !== startPoint.x || p.y !== startPoint.y)) {
+          walls.push({
+            x1: startPoint.x,
+            y1: startPoint.y,
+            x2: p.x,
+            y2: p.y
+          });
+
+          const len = Math.hypot(
+            (p.x - startPoint.x) / pxPerMeter,
+            (p.y - startPoint.y) / pxPerMeter
+          );
+
+          statusEl.textContent =
+            'Wall added: ' + len.toFixed(2) + ' m. Right-click / Undo to remove last.';
+
+          update3D();
+        } else {
+          statusEl.textContent = 'No wall added (too short). Drag to draw a wall.';
+        }
+
+        drawing = false;
+        startPoint = null;
+        currentPoint = null;
+        draw();
+      });
+
+      canvas.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+      });
+
+      function undoWall() {
+        if (walls.length === 0) {
+          statusEl.textContent = 'No walls to undo.';
+          return;
+        }
+
+        walls.pop();
+        update3D();
+        draw();
+        statusEl.textContent =
+          'Removed last wall. ' + walls.length + ' wall(s) remaining.';
+      }
+
+      undoBtn.addEventListener('click', undoWall);
+
+      clearBtn.addEventListener('click', function() {
+        walls = [];
+        drawing = false;
+        startPoint = null;
+        currentPoint = null;
+        update3D();
+        draw();
+        statusEl.textContent = 'Cleared plan. Drag to draw new walls.';
+      });
+
+      heightInput.addEventListener('input', update3D);
+
+      draw();
+      init3D();
+    })();
+  </script>
+</body>
+</html>
