@@ -628,6 +628,7 @@ def show_workspace():
       display: grid;
       gap: 8px;
       width: min(230px, calc(45vw - 14px));
+      border-radius: 10px 10px 10px 10px;
       max-height: calc(100% - 24px);
       overflow-y: auto;
       overscroll-behavior: contain;
