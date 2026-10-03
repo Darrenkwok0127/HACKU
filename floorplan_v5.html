@@ -1,0 +1,3631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interior Designer</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 14px system-ui, sans-serif;
+  color: #203044;
+  background: #eef2f6;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+header {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.78);
+  border-bottom: 1px solid #d9e1e9;
+}
+button, select, input {
+  font: inherit;
+  padding: 7px 9px;
+  border: 1px solid #c7d1dc;
+  border-radius: 6px;
+  background: white;
+}
+button { cursor: pointer; }
+button:hover { background: #f1f5f9; }
+button.active { background: #2563eb; color: white; border-color: #2563eb; }
+button.secondary { background: #f8fafc; }
+button.utility { background: #f8fafc; }
+.icon-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: #334155;
+}
+#priceTable .price-row {
+  display: grid;
+  grid-template-columns: 1fr 50px 1fr;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 5px;
+  font-size: 12px;
+}
+#priceTable .price-row .price-range {
+  text-align: right;
+  color: #475569;
+  font-size: 11px;
+}
+#priceTable .price-row input {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font-size: 13px;
+}
+.icon-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.icon-button::after {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 7px);
+  left: 50%;
+  padding: 5px 8px;
+  border-radius: 5px;
+  background: #17212f;
+  color: white;
+  content: attr(data-tooltip);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -2px);
+  transition: opacity 100ms ease, transform 100ms ease;
+  transition-delay: 280ms;
+}
+.icon-button:hover::after, .icon-button:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+.icon-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.icon-button:disabled { cursor: not-allowed; opacity: 0.4; }
+#remove { color: #dc2626; border-color: #fecaca; background: #fff7f7; }
+#remove:hover { border-color: #fca5a5; background: #fef2f2; }
+.view-icon-2d { display: none; }
+#view[aria-pressed="true"] .view-icon-3d { display: none; }
+#view[aria-pressed="true"] .view-icon-2d { display: block; }
+input[type="number"] { width: 72px; }
+input[type="color"] { padding: 2px; width: 38px; height: 32px; cursor: pointer; }
+
+.toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.78);
+}
+.toolbar-group + .toolbar-group { margin-left: 8px; }
+.toolbar-group.primary { flex: 1 1 520px; }
+.toolbar-group.utility { justify-content: flex-end; }
+.toolbar-label {
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: 0.01em;
+}
+.toolbar-split {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.78);
+  border-bottom: 1px solid #d9e1e9;
+}
+
+main {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+h3 { margin: 0; font-size: 15px; }
+h4 { margin: 0 0 8px; font-size: 13px; color: #1e293b; }
+header, footer, .toolbar-group, .section-box, .item, .furniture-group, #badge, .room-warning {
+  backdrop-filter: blur(4px);
+}
+
+.section-box {
+  padding: 10px;
+  margin-bottom: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+}
+.selection-inspector { display: grid; gap: 8px; }
+.selection-inspector[style*="display: none"] { display: none !important; }
+.selected-furniture-panel { margin: 0; background: rgba(239, 246, 255, 0.82); border-color: #93c5fd; }
+.selected-furniture-panel h4 { margin-bottom: 8px; }
+.inspector-name-display {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.inspector-name-display:hover { background: transparent; text-decoration: underline; }
+.inspector-name-display:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.input-row label {
+  font-size: 12px;
+  color: #475569;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.input-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.input-group label {
+  font-size: 11px;
+  color: #475569;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.input-group input { width: 100%; }
+
+.item {
+  padding: 9px 10px;
+  margin-bottom: 6px;
+  border: 1px solid #cdd7e2;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.76);
+  cursor: grab;
+  user-select: none;
+}
+.item:hover { border-color: #94a3b8; }
+.item small { display: block; color: #64748b; margin-top: 3px; font-size: 11px; }
+.help { color: #526276; font-size: 12px; line-height: 1.5; margin: 0; }
+
+#toolSidebar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(270px, 32vw);
+  min-width: 200px;
+  max-height: none;
+  padding: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: transparent;
+  backdrop-filter: blur(5px);
+  transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1), min-width 200ms cubic-bezier(0.4, 0, 0.2, 1), gap 200ms cubic-bezier(0.4, 0, 0.2, 1), padding 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+#toolSidebar[aria-expanded="false"] {
+  width: 48px;
+  min-width: 48px;
+  gap: 0;
+  padding: 12px 4px 4px 12px;
+  overflow: hidden;
+}
+#toolSidebar > :not(#toolSidebarToggle) {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear;
+}
+#toolSidebar[aria-expanded="false"] > :not(#toolSidebarToggle) {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 200ms;
+}
+.sidebar-collapse-toggle {
+  display: grid;
+  flex: 0 0 32px;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #334155;
+}
+.sidebar-collapse-toggle:hover { background: transparent; color: #111827; }
+.sidebar-collapse-toggle:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
+.sidebar-collapse-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#toolSidebarToggle svg, #groupsOverlayToggle svg { transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1); }
+#toolSidebarToggle[aria-expanded="false"] svg,
+#groupsOverlay[aria-expanded="true"] #groupsOverlayToggle svg { transform: rotate(180deg); }
+#stage { position: absolute; inset: 0; min-width: 0; min-height: 0; }
+.custom-name-label { display: block; margin-bottom: 4px; font-size: 12px; color: #475569; }
+#custNameDisplay {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-weight: 500;
+}
+#custNameDisplay:hover { background: transparent; text-decoration: underline; }
+#custNameDisplay:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.group-color-actions { display: flex; align-items: center; gap: 8px; }
+.group-color-actions .group-color-apply { padding: 6px 12px; }
+.group-color-apply {
+  border-color: #15803d;
+  border-radius: 999px;
+  background: #16a34a;
+  color: white;
+}
+.group-color-apply:hover { background: #15803d; }
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+#badge {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid #d9e1e9;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.tool-panel {
+  display: flex;
+  flex-direction: column;
+}
+#inspectorPanel { display: none; }
+.sidebar-panel-content { padding: 0; overflow: visible; }
+.panel-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0 0 6px;
+  border: 0;
+  background: transparent;
+  user-select: none;
+}
+.panel-header button { display: none; }
+.groups-overlay {
+  position: absolute;
+  z-index: 6;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  padding: 0 0 6px;
+  gap: 8px;
+  width: min(230px, calc(45vw - 14px));
+  border-radius: 10px 10px 10px 10px;
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: none;
+  backdrop-filter: blur(5px);
+  transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1), gap 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+#groupsOverlay[aria-expanded="false"] {
+  width: 40px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  overflow: hidden;
+}
+#groupsOverlayToggle { justify-self: end; }
+#groupsOverlay > :not(#groupsOverlayToggle) {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear;
+}
+#groupsOverlay[aria-expanded="false"] > :not(#groupsOverlayToggle) {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 200ms;
+}
+.groups-overlay > * { pointer-events: auto; }
+#createGroup { width: 90%; justify-self: center;}
+#groupsEmptyState {
+  margin: 0;
+  padding: 4px 8px;
+  background: transparent;
+  text-align: center;
+  user-select: none;
+}
+#groupsEmptyState[hidden] { display: none; }
+.panel-content { flex: 1; min-height: 0; padding: 10px; overflow: auto; }
+.panel-content[hidden] { display: none; }
+#groupsList { display: grid; gap: 8px; }
+.furniture-group {
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid var(--group-color, #60a5fa);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.76);
+}
+.furniture-group-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+}
+.group-name-button {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 2px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.group-name-button:hover { background: transparent; text-decoration: underline; }
+.group-name-button:focus-visible, .group-icon-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
+.group-icon-button {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #334155;
+  font-size: 16px;
+}
+.group-icon-button:hover { background: transparent; color: #111827; }
+.furniture-group-members { display: grid; gap: 4px; padding: 0 6px 6px; }
+.furniture-group-members[hidden], .group-menu[hidden], #groupNameForm[hidden] { display: none; }
+.furniture-group-members button { text-align: left; overflow-wrap: anywhere; }
+.furniture-group-members button[aria-pressed="true"] { border-color: #60a5fa; background: #dbeafe; color: #1d4ed8; font-weight: 600; }
+.group-menu { display: grid; gap: 6px; padding: 6px; border-top: 1px solid #e2e8f0; }
+.group-menu label { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px; }
+.group-menu input[type="checkbox"] { width: 16px; height: 16px; }
+.group-name-form { display: grid; gap: 6px; margin-bottom: 8px; }
+#marquee { pointer-events: none; }
+#badge { top: auto; bottom: 12px; left: 50%; transform: translateX(-50%); }
+#detachJoint {
+  position: absolute;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: #dc2626;
+  color: white;
+  font-size: 18px;
+  line-height: 1;
+  box-shadow: 0 1px 5px rgba(15, 23, 42, 0.3);
+  transform: translate(12px, -22px);
+}
+#detachJoint[hidden] { display: none; }
+.clearance-warning {
+  position: absolute;
+  z-index: 9;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(360px, calc(100% - 24px));
+  padding: 10px 12px;
+  border: 1px solid #eab308;
+  border-left: 4px solid #eab308;
+  border-radius: 7px;
+  background: rgba(254, 249, 195, 0.96);
+  color: #713f12;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.18);
+  font-size: 12px;
+}
+.clearance-warning[hidden] { display: none; }
+.clearance-warning p { margin: 0; line-height: 1.4; }
+.clearance-warning button {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-color: #ca8a04;
+  background: #fef08a;
+  color: #713f12;
+}
+.clearance-warning button:hover { background: #fde047; }
+.room-warning {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  max-width: calc(100% - 24px);
+  padding: 8px 12px;
+  border: 1px solid #fecaca;
+  border-top: 3px solid #dc2626;
+  border-radius: 8px;
+  background: rgba(254, 242, 242, 0.88);
+  color: #991b1b;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+  pointer-events: none;
+}
+footer {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.78);
+  border-top: 1px solid #d9e1e9;
+  line-height: 1.5;
+}
+@media (max-width: 700px) {
+  main { display: block; }
+  header { gap: 6px; padding: 8px; }
+  .toolbar-group { gap: 5px; padding: 5px; }
+  .toolbar-group + .toolbar-group { margin-left: 0; }
+  #toolSidebar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: min(210px, 42vw);
+    min-width: 0;
+    max-height: none;
+    padding: 8px;
+  }
+  #stage { position: absolute; inset: 0; }
+  .groups-overlay { right: 8px; width: min(190px, calc(45vw - 12px)); }
+  .panel-content { padding: 0; }
+  .input-group { grid-template-columns: 1fr; gap: 2px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="toolbar-group primary">
+    <strong class="toolbar-label">Interior Designer</strong>
+    <div class="toolbar-split">
+      <button id="select" class="icon-button active" aria-label="Select / Move" data-tooltip="Select / Move" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 3 14 10-6 1-3 6L5 3Z"/><path d="m13 14 4 6"/></svg></button>
+      <button id="wall" class="icon-button" aria-label="Draw wall" data-tooltip="Draw wall" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3z"/><path d="M8 6v12m8-12v12M3 12h5m8 0h5"/></svg></button>
+      <button id="door" class="icon-button" aria-label="Add door" data-tooltip="Add door" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V3h16v18"/><path d="M9 21V8l8-2v15m-4-8h.01"/></svg></button>
+      <button id="room" class="icon-button" aria-label="Draw room" data-tooltip="Draw room" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 5v4H4m16 4h-4v6"/></svg></button>
+    </div>
+    <div class="toolbar-split">
+      <label>Grid
+        <select id="grid">
+          <option value="auto">Auto</option>
+          <option value="0.1">0.1 m</option>
+          <option value="0.05">0.05 m</option>
+          <option value="0.01">0.01 m</option>
+        </select>
+      </label>
+
+      <label>Door width
+        <input id="doorWidth" type="number" min="0.4" max="2.4" step="0.05" value="0.8"> m
+      </label>
+
+      <label>Furniture clearance
+        <input id="furnitureClearance" type="number" min="0" max="5" step="0.05" value="0.02"> m
+      </label>
+    </div>
+  </div>
+
+  <div class="toolbar-group utility">
+    <button id="undo" class="icon-button utility" aria-label="Undo" data-tooltip="Undo (Ctrl+Z / Cmd+Z)" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 14-5-5 5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-2"/></svg></button>
+    <button id="redo" class="icon-button utility" aria-label="Redo" data-tooltip="Redo (Ctrl+Shift+Z / Cmd+Shift+Z / Ctrl+Y / Cmd+Y)" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4 5 5-5 5"/><path d="M20 9h-9a7 7 0 0 0 0 14h2"/></svg></button>
+    <button id="rotate" class="icon-button secondary" aria-label="Rotate / Flip" data-tooltip="Rotate / Flip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 9a7 7 0 0 1 12-2l2 2M4 13l2 2a7 7 0 0 0 12-2"/></svg></button>
+    <button id="remove" class="icon-button secondary" aria-label="Delete" data-tooltip="Delete"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button>
+    <button id="view" class="icon-button utility" aria-label="3D preview" data-tooltip="3D preview" aria-pressed="false"><svg class="view-icon-3d" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="M3 8v9l9 5 9-5V8M12 13v9"/></svg><svg class="view-icon-2d" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3z"/><path d="M3 10h18M8 6v12m8-12v12"/></svg></button>
+    <button id="fit" class="icon-button utility" aria-label="Fit view" data-tooltip="Fit view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/><path d="M8 8h8v8H8z"/></svg></button>
+    <button id="save" class="icon-button utility" aria-label="Save" data-tooltip="Save"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg></button>
+    <button id="load" class="icon-button utility" aria-label="Load" data-tooltip="Load"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-5 5 5-5 5 5M4 17v4h16v-4"/></svg></button>
+    <button id="export" class="icon-button utility" aria-label="Export JSON" data-tooltip="Export JSON"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10z"/><path d="M13 3v7h7M8 15h8m-8 3h8"/></svg></button>
+    <button id="clear" class="icon-button utility" aria-label="Clear" data-tooltip="Clear"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 13-3 3 13-13 3L4 7Z"/><path d="m7 9 12 8M5 21h15"/></svg></button>
+  </div>
+</header>
+
+<main>
+<div id="stage">
+<canvas id="canvas"></canvas>
+<div id="badge"></div>
+<div id="roomWarning" class="room-warning" role="status" aria-live="polite" hidden></div>
+<button id="detachJoint" type="button" aria-label="Detach all walls at this joint" title="Detach all walls at this joint" hidden>×</button>
+<div id="clearanceWarning" class="clearance-warning" role="status" aria-live="polite" hidden>
+<p id="clearanceWarningText"></p>
+<button id="dismissClearanceWarning" type="button">Dismiss</button>
+</div>
+</div>
+
+<aside id="toolSidebar" aria-label="Furniture and help" aria-expanded="true">
+<button id="toolSidebarToggle" class="sidebar-collapse-toggle" type="button" aria-label="Collapse left sidebar" title="Collapse left sidebar" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+<section id="inspectorPanel" class="tool-panel" aria-label="Selection inspector">
+<div class="panel-header">
+<strong>Selection</strong>
+</div>
+<div id="inspectorPanelBody" class="panel-content sidebar-panel-content">
+<!-- Selected Object Inspector -->
+<div id="inspector" class="selection-inspector" style="display:none"></div>
+
+<div id="roomInspector" class="section-box" style="display:none; background:rgba(240,253,244,0.82); border-color:#86efac;">
+<h4>Selected Room</h4>
+<div class="input-row">
+<label>Name <input id="roomName" type="text" style="width:100%"></label>
+</div>
+<div class="input-row">
+<label>Area color <input id="roomColor" type="color"></label>
+</div>
+</div>
+</div>
+</section>
+
+<section id="customPanel" class="tool-panel" aria-label="Custom furniture">
+<div class="panel-header">
+<strong>Custom furniture</strong>
+</div>
+<div id="customPanelBody" class="panel-content sidebar-panel-content">
+<!-- Custom Furniture Creator -->
+<div class="section-box">
+<div class="input-row">
+<span class="custom-name-label">Name</span>
+<button id="custNameDisplay" type="button" aria-label="Edit custom furniture name" title="Click to edit">Custom Desk</button>
+<input id="custName" type="text" value="Custom Desk" aria-label="Custom furniture name" style="width:100%" hidden>
+</div>
+<div class="input-group">
+<label>Length (m) <input id="custW" type="number" value="1.60" step="0.05" min="0.2" max="15"></label>
+<label>Width (m) <input id="custD" type="number" value="0.80" step="0.05" min="0.2" max="15"></label>
+</div>
+<div class="input-group">
+<label>Height (m) <input id="custH" type="number" value="0.75" step="0.05" min="0.1" max="5"></label>
+<label>Color <input id="custColor" type="color" value="#7ea8d8"></label>
+</div>
+<button id="addCustom" type="button" style="width:100%; background:#2563eb; color:white; font-weight:500;">
+        + Add to Plan
+</button>
+<div id="customDraggable" class="item" draggable="true" style="margin-top:8px; text-align:center; font-size:12px; background:rgba(241,245,249,0.76);">
+        Or drag this box to stage
+</div>
+</div>
+</div>
+</section>
+
+<section id="palettePanel" class="tool-panel" aria-label="Standard furniture">
+<div class="panel-header">
+<strong>Standard furniture</strong>
+</div>
+<div id="palettePanelBody" class="panel-content sidebar-panel-content">
+<div id="palette"></div>
+</div>
+</section>
+
+<section id="pricePanel" class="tool-panel" aria-label="Price estimator">
+  <div class="panel-header">
+    <strong>Price estimator</strong>
+  </div>
+  <div id="pricePanelBody" class="panel-content sidebar-panel-content">
+    <div class="section-box">
+      <p class="help">Enter quantities to estimate total furnishing cost.</p>
+      <div id="priceTable"></div>
+      <hr style="margin:12px 0;border:none;border-top:1px solid #cbd5e1;">
+      <div class="input-row" style="margin-bottom:4px;">
+        <label>Total (USD)</label>
+        <strong id="totalUSD">$0</strong>
+      </div>
+      <div class="input-row" style="margin-bottom:4px;">
+        <label>Total (HKD)</label>
+        <strong id="totalHKD">HK$0</strong>
+      </div>
+      <small class="help" style="color:#64748b;">Exchange rate: 1 USD ≈ 7.8 HKD</small>
+      <button id="resetPrices" type="button" class="secondary" style="width:100%;margin-top:8px;">Reset quantities</button>
+    </div>
+  </div>
+</section>
+
+<section id="helpPanel" class="tool-panel" aria-label="Editor help">
+<div class="panel-header">
+<strong>Editor help</strong>
+</div>
+<div id="helpPanelBody" class="panel-content sidebar-panel-content">
+<div class="section-box">
+<p class="help">
+<b>Draw wall:</b> drag from start to end.<br>
+<b>Draw room:</b> drag between opposite corners; corners snap to grid.<br>
+<b>Grid precision:</b> hold <b>Alt/Option</b> for rougher snapping (×10), or <b>Ctrl/Cmd</b> for finer snapping (÷10).<br>
+      • Wall ends automatically <b>snap to nearby walls & corners</b>.<br>
+  • Connection blocks can be moved, selected, and deleted; crossing walls are blocked.<br>
+      • Hold <b>Shift</b> for orthogonal lock.<br><br>
+<b>Select / Move:</b> click furniture then drag.<br>
+  • Hold <b>Shift</b> and click to multi-select; drag empty space to marquee select.<br>
+  • Create a named group from selected furniture in the right panel.<br>
+      • <b>Blue dot:</b> rotate furniture (360°).<br>
+      • <b>Orange square:</b> resize furniture.<br>
+  • Drag orange wall-end handles to stretch; select a joint and press <b>×</b> to detach.<br>
+      • <b style="color:#dc2626">Red highlight:</b> furniture overlaps walls or other furniture.<br>
+<b>Add door:</b> click a wall.<br>
+<b>R:</b> rotate furniture or walls; flip door swing.<br>
+<b>Delete:</b> remove selection.<br>
+<b>Trackpad:</b> pinch to zoom; two-finger scroll to pan.<br>
+<b>Mouse wheel:</b> zoom.<br>
+<b>Space + drag:</b> pan (2D).<br>
+<b>3D preview:</b> left‑drag rotates around room, right‑drag pans, wheel zooms.
+</p>
+</div>
+</div>
+</section>
+</aside>
+
+<div id="groupsOverlay" class="groups-overlay" aria-label="Furniture groups" aria-expanded="true">
+<button id="groupsOverlayToggle" class="sidebar-collapse-toggle" type="button" aria-label="Collapse group list" title="Collapse group list" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+<button id="createGroup" type="button" disabled>Create group</button>
+<div id="groupNameForm" class="group-name-form" hidden>
+<label for="groupNameInput">Group name</label>
+<input id="groupNameInput" type="text" maxlength="60" placeholder="e.g. Living room">
+<div class="toolbar-split">
+<button id="confirmGroup" type="button">Create</button>
+<button id="cancelGroup" type="button" class="secondary">Cancel</button>
+</div>
+</div>
+<div id="groupsList"></div>
+<p id="groupsEmptyState" role="status">No furniture groups yet.</p>
+</div>
+</div>
+</main>
+
+<footer id="status">
+  Draw a room or modify the layout. All measurements are in metres.
+</footer>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const canvas = $("canvas");
+const ctx = canvas.getContext("2d");
+
+/* ===== Price Estimator ===== */
+const PRICE_DATA = [
+  { type: 'sofa',    name: 'Sofa',     min: 400,  max: 1200 },
+  { type: 'bed',     name: 'Bed',      min: 500,  max: 1500 },
+  { type: 'table',   name: 'Table',    min: 200,  max: 800  },
+  { type: 'chair',   name: 'Chair',    min: 50,   max: 200  },
+  { type: 'desk',    name: 'Desk',     min: 150,  max: 600  },
+  { type: 'cabinet', name: 'Cabinet',  min: 150,  max: 700  },
+  { type: 'bath',    name: 'Bath',     min: 300,  max: 900  },
+  { type: 'toilet',  name: 'Toilet',   min: 150,  max: 400  },
+  { type: 'sink',    name: 'Sink',     min: 100,  max: 300  },
+  { type: 'printer', name: 'Printer',  min: 80,   max: 300  },
+  { type: 'tv',      name: 'TV',       min: 300,  max: 1000 }
+];
+const USD_TO_HKD = 7.8;
+
+function initPriceEstimator() {
+  const table = $('priceTable');
+  if (!table) return; // safety check
+
+  table.replaceChildren();
+
+  PRICE_DATA.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'price-row';
+    row.innerHTML = `
+      <span>${item.name}</span>
+      <input type="number" min="0" max="99" step="1" value="0" data-type="${item.type}" aria-label="Quantity of ${item.name}">
+      <span class="price-range">$${item.min} – $${item.max}</span>
+    `;
+    table.appendChild(row);
+  });
+
+  table.querySelectorAll('input').forEach(input => {
+    input.addEventListener('input', updatePriceTotals);
+  });
+
+  $('resetPrices').onclick = () => {
+    table.querySelectorAll('input').forEach(input => input.value = 0);
+    updatePriceTotals();
+    notify('Price quantities reset.');
+  };
+
+  updatePriceTotals();
+}
+
+function updatePriceTotals() {
+  let totalMinUSD = 0;
+  let totalMaxUSD = 0;
+
+  document.querySelectorAll('#priceTable .price-row').forEach(row => {
+    const input = row.querySelector('input');
+    const type = input.dataset.type;
+    const qty = parseInt(input.value, 10) || 0;
+    const price = PRICE_DATA.find(item => item.type === type);
+    if (qty > 0 && price) {
+      totalMinUSD += price.min * qty;
+      totalMaxUSD += price.max * qty;
+    }
+  });
+
+  const avgUSD = Math.round((totalMinUSD + totalMaxUSD) / 2);
+  $('totalUSD').textContent = `$${formatNumber(totalMinUSD)} – $${formatNumber(totalMaxUSD)}  (avg $${formatNumber(avgUSD)})`;
+  $('totalHKD').textContent = `HK$${formatNumber(Math.round(totalMinUSD * USD_TO_HKD))} – HK$${formatNumber(Math.round(totalMaxUSD * USD_TO_HKD))}  (avg HK$${formatNumber(Math.round(avgUSD * USD_TO_HKD))})`;
+}
+
+function formatNumber(num) {
+  return num.toLocaleString('en-US');
+}
+/* ===== End Price Estimator ===== */
+
+function setupCollapseToggle(toggleId, panelId, expandedLabel, collapsedLabel) {
+  const toggle = $(toggleId);
+  const panel = $(panelId);
+  toggle.addEventListener("click", () => {
+    const expanded = toggle.getAttribute("aria-expanded") !== "true";
+    toggle.setAttribute("aria-expanded", String(expanded));
+    panel.setAttribute("aria-expanded", String(expanded));
+    const label = expanded ? expandedLabel : collapsedLabel;
+    toggle.setAttribute("aria-label", label);
+    toggle.title = label;
+  });
+}
+
+setupCollapseToggle("toolSidebarToggle", "toolSidebar", "Collapse left sidebar", "Expand left sidebar");
+setupCollapseToggle("groupsOverlayToggle", "groupsOverlay", "Collapse group list", "Expand group list");
+
+const catalog = {
+sofa:    { name:"Sofa",    w:2.1,  d:0.9,  h:0.8,  color:"#80a9d4" },
+bed:     { name:"Bed",     w:1.5,  d:2.0,  h:0.55, color:"#b6a1d5" },
+table:   { name:"Table",   w:1.4,  d:0.8,  h:0.75, color:"#d6ad78", supportsSurface: true, surfaceTypes: ["printer", "tv", "lamp", "plant", "custom"] },
+chair:   { name:"Chair",   w:0.5,  d:0.5,  h:0.8,  color:"#e1bd89" },
+desk:    { name:"Desk",    w:1.2,  d:0.6,  h:0.75, color:"#b7a184", supportsSurface: true, surfaceTypes: ["printer", "lamp", "plant", "custom"] },
+cabinet: { name:"Cabinet", w:1.0,  d:0.45, h:1.8,  color:"#a9b8c7" },
+bath:    { name:"Bath",    w:0.75, d:1.7,  h:0.55, color:"#9ed4dd" },
+toilet:  { name:"Toilet",  w:0.4,  d:0.7,  h:0.7,  color:"#c4dce2" },
+sink:    { name:"Sink",    w:0.6,  d:0.45, h:0.85, color:"#a6cbd7" },
+printer: { name:"Printer", w:0.45, d:0.35, h:0.35, color:"#c7d2fe", surfaceOnly: true },
+tv:      { name:"TV",      w:1.1,  d:0.12, h:0.65, color:"#111827", surfaceOnly: true }
+};
+
+const SURFACE_SUPPORT = new Set(["printer", "tv", "lamp", "plant", "custom"]);
+
+let serial = 0;
+const uid = () => "object-" + (++serial);
+
+let walls = [], doors = [], furniture = [], joints = [], detachedConnections = [], rooms = [], groups = [];
+let selected = null;
+let multiSelectedIds = [];
+let marquee = null;
+let tool = "select";
+let iso = false; // false = 2D editing, true = 3D preview
+let space = false;
+let gesture = null;
+let draft = null;
+let activeSnap = null;
+let azimuth = Math.PI / 4; // rotation in 3D
+let target = { x: 0, y: 0, z: 0 }; // center of model
+
+let width = 800, height = 600;
+let scale = 90;
+let camera = { x: 0, y: 0 };
+
+const WALL_THICKNESS = 0.12;
+const JOINT_SIZE = WALL_THICKNESS;
+let FURNITURE_CLEARANCE = 0.02;
+const CUTAWAY_HEIGHT = 1.1;
+const EPS = 1e-8;
+const undoHistory = [];
+const redoHistory = [];
+const HISTORY_LIMIT = 100;
+let inspectorHistoryBefore = null;
+let closeFurniturePairs = [];
+const dismissedClosePairKeys = new Set();
+let gridModifier = 1;
+
+function notify(text) { $("status").textContent = text; }
+
+function captureHistoryState() {
+return JSON.stringify({ serial, walls, doors, furniture, joints, detachedConnections, rooms, groups, selected, multiSelectedIds });
+}
+
+function historyContent(snapshot) {
+const { serial, walls, doors, furniture, joints, detachedConnections, rooms, groups } = JSON.parse(snapshot);
+return JSON.stringify({ serial, walls, doors, furniture, joints, detachedConnections, rooms, groups });
+}
+
+function updateHistoryButtons() {
+const pendingInspectorEdit = inspectorHistoryBefore &&
+historyContent(inspectorHistoryBefore) !== historyContent(captureHistoryState());
+$("undo").disabled = undoHistory.length === 0 && !pendingInspectorEdit;
+$("redo").disabled = redoHistory.length === 0 || !!pendingInspectorEdit;
+}
+
+function recordHistory(before) {
+const after = captureHistoryState();
+if (historyContent(before) === historyContent(after)) {
+updateHistoryButtons();
+return;
+  }
+undoHistory.push(before);
+if (undoHistory.length > HISTORY_LIMIT) undoHistory.shift();
+redoHistory.length = 0;
+updateHistoryButtons();
+}
+
+function restoreHistoryState(snapshot) {
+const state = JSON.parse(snapshot);
+serial = state.serial;
+walls = state.walls;
+doors = state.doors;
+furniture = state.furniture;
+joints = state.joints || [];
+detachedConnections = state.detachedConnections || [];
+rooms = state.rooms || [];
+groups = state.groups || [];
+closeFurniturePairs = [];
+dismissedClosePairKeys.clear();
+selected = state.selected;
+multiSelectedIds = state.multiSelectedIds || [];
+if (selected && !selectedObject()) selected = null;
+gesture = null;
+draft = null;
+activeSnap = null;
+updateInspector();
+renderGroups();
+refreshCloseFurnitureWarnings();
+fitView();
+}
+
+function flushInspectorHistory() {
+if (!inspectorHistoryBefore) return;
+const before = inspectorHistoryBefore;
+inspectorHistoryBefore = null;
+recordHistory(before);
+}
+
+function undo() {
+flushInspectorHistory();
+if (!undoHistory.length) return;
+redoHistory.push(captureHistoryState());
+restoreHistoryState(undoHistory.pop());
+updateHistoryButtons();
+notify("Undid last change.");
+}
+
+function redo() {
+flushInspectorHistory();
+if (!redoHistory.length) return;
+undoHistory.push(captureHistoryState());
+restoreHistoryState(redoHistory.pop());
+updateHistoryButtons();
+notify("Redid last change.");
+}
+
+function round2(v) { return Math.round(v * 100) / 100; }
+  
+function gridStep() {
+const value = $("grid").value;
+let step;
+if (value !== "auto") step = Number(value);
+else if (scale >= 600) step = 0.01;
+else if (scale >= 120) step = 0.05;
+else step = 0.1;
+return Math.round(step * gridModifier * 1e10) / 1e10;
+}
+
+function updateGridModifier(event) {
+const next = event.ctrlKey || event.metaKey ? 0.1 : event.altKey ? 10 : 1;
+if (next === gridModifier) return;
+gridModifier = next;
+render();
+}
+
+function snap(p) {
+const q = gridStep();
+return {
+x: Math.round(p.x / q) * q,
+y: Math.round(p.y / q) * q
+  };
+}
+
+/* --- Wall Matching & Snapping --- */
+function snapWallPoint(rawP, origin = null, useShift = false, excludedWallId = null) {
+let p = { ...rawP };
+
+if (origin && useShift) {
+if (Math.abs(p.x - origin.x) > Math.abs(p.y - origin.y)) {
+p.y = origin.y;
+    } else {
+p.x = origin.x;
+    }
+  }
+
+const snapThreshold = Math.max(0.20, 18 / scale);
+let bestSnap = null;
+let bestDist = snapThreshold;
+
+for (const w of walls) {
+if (w.id === excludedWallId) continue;
+for (const pt of [w.a, w.b]) {
+const d = distance(p, pt);
+if (d < bestDist) {
+bestDist = d;
+bestSnap = { x: pt.x, y: pt.y, type: "vertex", target: pt };
+      }
+    }
+  }
+
+if (!bestSnap) {
+for (const w of walls) {
+if (w.id === excludedWallId) continue;
+const hit = projectOnWall(p, w);
+if (hit.distance < snapThreshold && hit.distance < bestDist) {
+bestDist = hit.distance;
+bestSnap = { x: hit.point.x, y: hit.point.y, type: "edge", target: hit.point };
+      }
+    }
+  }
+
+if (bestSnap) {
+return { point: { x: bestSnap.x, y: bestSnap.y }, snapInfo: bestSnap };
+  }
+
+return { point: snap(p), snapInfo: null };
+}
+
+function screen(p, z = 0) {
+if (!iso) {
+return { x: camera.x + p.x * scale,
+y: camera.y + p.y * scale };
+  }
+
+const dx = p.x - target.x;
+const dy = p.y - target.y;
+const dz = z - target.z;
+
+const cosA = Math.cos(azimuth), sinA = Math.sin(azimuth);
+const xr = dx * cosA - dy * sinA;
+const yr = dx * sinA + dy * cosA;
+const zr = dz;
+
+return {
+x: camera.x + (xr - yr) * 0.8660254 * scale,
+y: camera.y + ((xr + yr) * 0.5 - zr) * scale
+  };
+}
+
+function world(p) {
+if (!iso) return {
+x: (p.x - camera.x) / scale,
+y: (p.y - camera.y) / scale
+  };
+return { x: 0, y: 0 };
+}
+
+function mouse(e) {
+const rect = canvas.getBoundingClientRect();
+return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function distance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+function wallInfo(w) {
+const length = distance(w.a, w.b);
+return {
+length,
+ux: length > 0 ? (w.b.x - w.a.x) / length : 0,
+uy: length > 0 ? (w.b.y - w.a.y) / length : 0
+  };
+}
+
+function along(w, t) {
+return {
+x: w.a.x + (w.b.x - w.a.x) * t,
+y: w.a.y + (w.b.y - w.a.y) * t
+  };
+}
+
+function projectOnWall(p, w) {
+const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y;
+const lenSq = dx * dx + dy * dy;
+if (lenSq === 0) return { t: 0, point: { ...w.a }, distance: distance(p, w.a) };
+const t = Math.max(0, Math.min(1, ((p.x - w.a.x) * dx + (p.y - w.a.y) * dy) / lenSq));
+const pt = along(w, t);
+return { t, point: pt, distance: distance(p, pt) };
+}
+
+function nearestWall(p) {
+let best = null;
+for (const w of walls) {
+const hit = projectOnWall(p, w);
+if (!best || hit.distance < best.distance) best = { ...hit, wall: w };
+  }
+return best;
+}
+
+function furniturePoint(f, x, y) {
+const c = Math.cos(f.angle), s = Math.sin(f.angle);
+return { x: f.x + x * c - y * s, y: f.y + x * s + y * c };
+}
+
+function footprint(f) {
+return [
+furniturePoint(f, -f.w / 2, -f.d / 2),
+furniturePoint(f,  f.w / 2, -f.d / 2),
+furniturePoint(f,  f.w / 2,  f.d / 2),
+furniturePoint(f, -f.w / 2,  f.d / 2)
+  ];
+}
+
+function insideFurniture(p, f) {
+const dx = p.x - f.x, dy = p.y - f.y;
+const c = Math.cos(f.angle), s = Math.sin(f.angle);
+return Math.abs(dx * c + dy * s) <= f.w / 2 &&
+Math.abs(-dx * s + dy * c) <= f.d / 2;
+}
+
+function toLocal(f, p) {
+const dx = p.x - f.x, dy = p.y - f.y;
+const c = Math.cos(-f.angle), s = Math.sin(-f.angle);
+return { x: dx * c - dy * s, y: dx * s + dy * c };
+}
+
+/* ==========================================================================
+   Collision & Overlap Detection (SAT & Polygon Intersection)
+   ========================================================================== */
+
+function isPointInPoly(pt, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x, yi = poly[i].y;
+    const xj = poly[j].x, yj = poly[j].y;
+    const intersect = ((yi > pt.y) !== (yj > pt.y)) &&
+      (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi + 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function segmentsIntersect(p1, p2, p3, p4) {
+  function ccw(a, b, c) {
+    return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
+  }
+  return (ccw(p1, p3, p4) !== ccw(p2, p3, p4)) && (ccw(p1, p2, p3) !== ccw(p1, p2, p4));
+}
+
+function polygonsOverlap(poly1, poly2) {
+  // Check if any edges intersect
+  for (let i = 0; i < poly1.length; i++) {
+    const a1 = poly1[i], a2 = poly1[(i + 1) % poly1.length];
+    for (let j = 0; j < poly2.length; j++) {
+      const b1 = poly2[j], b2 = poly2[(j + 1) % poly2.length];
+      if (segmentsIntersect(a1, a2, b1, b2)) return true;
+    }
+  }
+  // Check if one polygon is strictly contained inside the other
+  if (isPointInPoly(poly1[0], poly2)) return true;
+  if (isPointInPoly(poly2[0], poly1)) return true;
+  return false;
+}
+
+// Compute set of furniture IDs that collide with walls or other furniture
+function getCollidingFurnitureIds() {
+  const colliding = new Set();
+  const fFootprints = new Map();
+  furniture.forEach(f => fFootprints.set(f.id, footprint(f)));
+
+  // 1. Furniture vs Furniture collision
+  for (let i = 0; i < furniture.length; i++) {
+    for (let j = i + 1; j < furniture.length; j++) {
+      const f1 = furniture[i], f2 = furniture[j];
+      if (f1.parentId === f2.id || f2.parentId === f1.id) continue;
+      if (polygonsOverlap(fFootprints.get(f1.id), fFootprints.get(f2.id))) {
+        colliding.add(f1.id);
+        colliding.add(f2.id);
+      }
+    }
+  }
+
+  // 2. Furniture vs Wall collision (against wall thickness footprint)
+  const wallPolys = walls.map(w => wallFootprintTrimmed(w, 0, 1)).filter(Boolean);
+  for (const f of furniture) {
+    const polyF = fFootprints.get(f.id);
+    for (const polyW of wallPolys) {
+      if (polygonsOverlap(polyF, polyW)) {
+        colliding.add(f.id);
+        break;
+      }
+    }
+  }
+
+  return colliding;
+}
+
+function clearancePairKey(first, second) {
+return [first.id, second.id].sort().join("|");
+}
+
+function closestEdgePoints(first, second) {
+let best = null;
+for (let firstIndex = 0; firstIndex < first.length; firstIndex++) {
+const firstA = first[firstIndex], firstB = first[(firstIndex + 1) % first.length];
+const firstEdge = { a: firstA, b: firstB };
+for (let secondIndex = 0; secondIndex < second.length; secondIndex++) {
+const secondA = second[secondIndex], secondB = second[(secondIndex + 1) % second.length];
+const secondEdge = { a: secondA, b: secondB };
+for (const point of [firstA, firstB]) {
+const projection = projectOnWall(point, secondEdge);
+if (!best || projection.distance < best.distance) {
+best = { distance: projection.distance, firstPoint: point, secondPoint: projection.point, firstEdge, secondEdge };
+      }
+    }
+for (const point of [secondA, secondB]) {
+const projection = projectOnWall(point, firstEdge);
+if (!best || projection.distance < best.distance) {
+best = { distance: projection.distance, firstPoint: projection.point, secondPoint: point, firstEdge, secondEdge };
+      }
+    }
+  }
+}
+return best;
+}
+
+function doorSwingFootprint(door) {
+const wall = walls.find(item => item.id === door.wallId);
+if (!wall) return null;
+const { length, ux, uy } = wallInfo(wall);
+if (length <= EPS) return null;
+const hinge = along(wall, door.t - door.width / (2 * length));
+const nx = -uy * door.swing, ny = ux * door.swing;
+const radius = door.width + WALL_THICKNESS / 2;
+const footprint = [hinge];
+for (let index = 0; index <= 24; index++) {
+const angle = index / 24 * Math.PI / 2;
+footprint.push({
+x: hinge.x + radius * (ux * Math.cos(angle) + nx * Math.sin(angle)),
+y: hinge.y + radius * (uy * Math.cos(angle) + ny * Math.sin(angle))
+    });
+  }
+return footprint;
+}
+
+function clearanceEntities() {
+const entities = furniture.map(item => ({
+id: `furniture:${item.id}`, kind: "furniture", label: item.name || "Furniture",
+polygon: footprint(item), item
+  }));
+for (const wall of walls) {
+solidWallSegments(wall).forEach(([start, end], index) => {
+const polygon = wallFootprintTrimmed(wall, start, end);
+if (polygon) entities.push({ id: `wall:${wall.id}:${index}`, kind: "wall", label: "Wall", polygon, wall });
+    });
+  }
+for (const door of doors) {
+const polygon = doorSwingFootprint(door);
+if (polygon) entities.push({ id: `door:${door.id}`, kind: "door", label: "Door", polygon, door });
+  }
+return entities;
+}
+
+function intentionalClearancePair(first, second) {
+if (first.kind === "furniture" && second.kind === "furniture") {
+return first.item.parentId === second.item.id || second.item.parentId === first.item.id;
+  }
+if (first.kind === "door" && second.kind === "wall") return first.door.wallId === second.wall.id;
+if (second.kind === "door" && first.kind === "wall") return second.door.wallId === first.wall.id;
+if (first.kind === "wall" && second.kind === "wall") {
+const firstWall = first.wall, secondWall = second.wall;
+return [firstWall.a, firstWall.b].some(point =>
+distance(point, secondWall.a) < EPS || distance(point, secondWall.b) < EPS || projectOnWall(point, secondWall).distance < EPS) ||
+[secondWall.a, secondWall.b].some(point => projectOnWall(point, firstWall).distance < EPS);
+  }
+return false;
+}
+
+function getCloseFurniturePairs() {
+const pairs = [];
+const entities = clearanceEntities();
+for (let firstIndex = 0; firstIndex < entities.length; firstIndex++) {
+const first = entities[firstIndex];
+for (let secondIndex = firstIndex + 1; secondIndex < entities.length; secondIndex++) {
+const second = entities[secondIndex];
+if (intentionalClearancePair(first, second) || polygonsOverlap(first.polygon, second.polygon)) continue;
+const closest = closestEdgePoints(first.polygon, second.polygon);
+if (closest && closest.distance <= FURNITURE_CLEARANCE) {
+pairs.push({ key: clearancePairKey(first, second), first, second, ...closest });
+      }
+    }
+  }
+return pairs;
+}
+
+function refreshCloseFurnitureWarnings() {
+const pairs = getCloseFurniturePairs();
+const nearbyKeys = new Set(pairs.map(pair => pair.key));
+for (const key of dismissedClosePairKeys) {
+if (!nearbyKeys.has(key)) dismissedClosePairKeys.delete(key);
+  }
+closeFurniturePairs = pairs.filter(pair => !dismissedClosePairKeys.has(pair.key));
+}
+
+function dismissCloseFurnitureWarnings() {
+for (const pair of closeFurniturePairs) dismissedClosePairKeys.add(pair.key);
+closeFurniturePairs = [];
+render();
+}
+
+function edgeWithinClearanceSegment(edge, other) {
+const distanceAt = t => projectOnWall(along(edge, t), other).distance;
+let low = 0, high = 1;
+for (let index = 0; index < 36; index++) {
+const first = (2 * low + high) / 3;
+const second = (low + 2 * high) / 3;
+if (distanceAt(first) <= distanceAt(second)) high = second;
+else low = first;
+  }
+const closest = (low + high) / 2;
+if (distanceAt(closest) > FURNITURE_CLEARANCE) return null;
+let start = 0, end = 1;
+if (distanceAt(0) > FURNITURE_CLEARANCE) {
+low = 0;
+high = closest;
+for (let index = 0; index < 32; index++) {
+const middle = (low + high) / 2;
+if (distanceAt(middle) <= FURNITURE_CLEARANCE) high = middle;
+else low = middle;
+    }
+start = high;
+  }
+if (distanceAt(1) > FURNITURE_CLEARANCE) {
+low = closest;
+high = 1;
+for (let index = 0; index < 32; index++) {
+const middle = (low + high) / 2;
+if (distanceAt(middle) <= FURNITURE_CLEARANCE) low = middle;
+else high = middle;
+    }
+end = low;
+  }
+return [along(edge, start), along(edge, end)];
+}
+
+function drawCloseFurnitureBars() {
+if (iso) return;
+ctx.save();
+ctx.lineCap = "round";
+for (const pair of closeFurniturePairs) {
+const firstFootprint = pair.first.polygon, secondFootprint = pair.second.polygon;
+for (let firstIndex = 0; firstIndex < firstFootprint.length; firstIndex++) {
+const firstEdge = { a: firstFootprint[firstIndex], b: firstFootprint[(firstIndex + 1) % firstFootprint.length] };
+for (let secondIndex = 0; secondIndex < secondFootprint.length; secondIndex++) {
+const secondEdge = { a: secondFootprint[secondIndex], b: secondFootprint[(secondIndex + 1) % secondFootprint.length] };
+const closest = closestEdgePoints([firstEdge.a, firstEdge.b], [secondEdge.a, secondEdge.b]);
+if (!closest || closest.distance > FURNITURE_CLEARANCE) continue;
+for (const [edge, other] of [[firstEdge, secondEdge], [secondEdge, firstEdge]]) {
+const segment = edgeWithinClearanceSegment(edge, other);
+if (!segment) continue;
+line(screen(segment[0]), screen(segment[1]), "#854d0e", 8);
+line(screen(segment[0]), screen(segment[1]), "#facc15", 5);
+      }
+    }
+  }
+}
+ctx.restore();
+}
+
+function renderCloseFurnitureWarning() {
+const warning = $("clearanceWarning");
+warning.hidden = iso || closeFurniturePairs.length === 0;
+if (!closeFurniturePairs.length) return;
+const text = $("clearanceWarningText");
+if (closeFurniturePairs.length === 1) {
+const [pair] = closeFurniturePairs;
+text.textContent = `${pair.first.label} and ${pair.second.label} are less than ${FURNITURE_CLEARANCE * 100} cm apart.`;
+} else {
+text.textContent = `${closeFurniturePairs.length} object pairs are less than ${FURNITURE_CLEARANCE * 100} cm apart.`;
+  }
+}
+
+function orientation(a, b, c) {
+const value = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y);
+if (Math.abs(value) < EPS) return 0;
+return value > 0 ? 1 : 2;
+}
+
+function segmentsProperIntersect(a, b, c, d) {
+const o1 = orientation(a, b, c), o2 = orientation(a, b, d);
+const o3 = orientation(c, d, a), o4 = orientation(c, d, b);
+if (((o1 === 1 && o2 === 2) || (o1 === 2 && o2 === 1)) &&
+((o3 === 1 && o4 === 2) || (o3 === 2 && o4 === 1))) return true;
+if (o1 !== 0 || o2 !== 0 || o3 !== 0 || o4 !== 0) return false;
+const overlapX = Math.min(Math.max(a.x, b.x), Math.max(c.x, d.x)) - Math.max(Math.min(a.x, b.x), Math.min(c.x, d.x));
+const overlapY = Math.min(Math.max(a.y, b.y), Math.max(c.y, d.y)) - Math.max(Math.min(a.y, b.y), Math.min(c.y, d.y));
+return Math.max(overlapX, overlapY) > EPS;
+}
+
+function draftIntersectsWalls(a, b) {
+if (walls.some(wall => segmentsProperIntersect(a, b, wall.a, wall.b))) return true;
+return draftIntersectsDoors(a, b);
+}
+
+function draftIntersectsDoors(a, b) {
+if (distance(a, b) <= EPS) return false;
+const candidate = { id: "draft", a, b };
+const footprint = wallFootprint(candidate, 0, 1);
+for (const door of doors) {
+const wall = walls.find(item => item.id === door.wallId);
+if (!wall) continue;
+const { length, ux, uy } = wallInfo(wall);
+if (length <= EPS) continue;
+const halfOpening = (door.width / 2 + WALL_THICKNESS / 2) / length;
+const openStart = Math.max(0, door.t - halfOpening);
+const openEnd = Math.min(1, door.t + halfOpening);
+if (openEnd > openStart && polygonsOverlap(footprint, wallFootprint(wall, openStart, openEnd))) return true;
+
+const hinge = along(wall, door.t - door.width / (2 * length));
+const nx = -uy * door.swing, ny = ux * door.swing;
+const radius = door.width + WALL_THICKNESS / 2;
+const swingSector = [hinge];
+for (let index = 0; index <= 24; index++) {
+const angle = index / 24 * Math.PI / 2;
+swingSector.push({
+x: hinge.x + radius * (ux * Math.cos(angle) + nx * Math.sin(angle)),
+y: hinge.y + radius * (uy * Math.cos(angle) + ny * Math.sin(angle))
+      });
+    }
+if (polygonsOverlap(footprint, swingSector)) return true;
+  }
+return false;
+}
+
+function rebuildJoints() {
+joints = [];
+for (const wall of walls) {
+for (const endpoint of ["a", "b"]) {
+const point = wall[endpoint];
+if (isDetachedEndpoint(wall.id, endpoint, point)) continue;
+const connected = walls.some(other => {
+if (other.id === wall.id) return false;
+if (distance(point, other.a) < EPS && !isDetachedEndpoint(other.id, "a", point)) return true;
+if (distance(point, other.b) < EPS && !isDetachedEndpoint(other.id, "b", point)) return true;
+if (isDetachedHost(other.id, point)) return false;
+return projectOnWall(point, other).distance < EPS;
+});
+if (!connected || joints.some(joint => distance(joint, point) < EPS)) continue;
+joints.push({ id: jointId(point), x: point.x, y: point.y });
+}
+}
+}
+
+function isDetachedEndpoint(wallId, endpoint, point) {
+return detachedConnections.some(connection => distance(connection.point, point) < EPS &&
+connection.endpoints.some(reference => reference.wallId === wallId && reference.endpoint === endpoint));
+}
+
+function isDetachedHost(wallId, point) {
+return detachedConnections.some(connection => distance(connection.point, point) < EPS &&
+connection.hostWallIds.includes(wallId));
+}
+
+function clearDetachedEndpoint(wallId, endpoint) {
+for (const connection of detachedConnections) {
+connection.endpoints = connection.endpoints.filter(reference => reference.wallId !== wallId || reference.endpoint !== endpoint);
+}
+detachedConnections = detachedConnections.filter(connection => connection.endpoints.length > 0);
+}
+
+function clearDetachedWall(wallId) {
+for (const connection of detachedConnections) {
+connection.endpoints = connection.endpoints.filter(reference => reference.wallId !== wallId);
+connection.hostWallIds = connection.hostWallIds.filter(id => id !== wallId);
+}
+detachedConnections = detachedConnections.filter(connection => connection.endpoints.length > 0);
+}
+
+function jointFootprint(joint) {
+const half = JOINT_SIZE / 2;
+return [
+{ x: joint.x - half, y: joint.y - half },
+{ x: joint.x + half, y: joint.y - half },
+{ x: joint.x + half, y: joint.y + half },
+{ x: joint.x - half, y: joint.y + half }
+];
+}
+
+function drawJoint2D(joint) {
+const chosen = selected?.kind === "joint" && selected.id === joint.id;
+polygon(jointFootprint(joint).map(point => screen(point)), "#64748b", chosen ? "#2563eb" : "#475569", chosen ? 3 : 1);
+}
+
+function endpointDisplayOffset(wallId, endpoint, point) {
+const connection = detachedConnections.find(item => distance(item.point, point) < EPS &&
+item.endpoints.some(reference => reference.wallId === wallId && reference.endpoint === endpoint));
+if (!connection) return { x: 0, y: 0 };
+const index = connection.endpoints.findIndex(reference => reference.wallId === wallId && reference.endpoint === endpoint);
+const angle = -Math.PI / 2 + index * Math.PI * 2 / connection.endpoints.length;
+return { x: Math.cos(angle) * 14, y: Math.sin(angle) * 14 };
+}
+
+function endpointScreenPoint(wall, endpoint) {
+const point = screen(wall[endpoint]);
+const offset = endpointDisplayOffset(wall.id, endpoint, wall[endpoint]);
+return { x: point.x + offset.x, y: point.y + offset.y };
+}
+
+function drawWallEndpointHandles() {
+for (const wall of walls) {
+for (const endpoint of ["a", "b"]) {
+if (joints.some(joint => distance(joint, wall[endpoint]) < EPS)) continue;
+const point = endpointScreenPoint(wall, endpoint);
+const chosen = selected?.kind === "wall" && selected.id === wall.id && selected.endpoint === endpoint;
+ctx.beginPath();
+ctx.arc(point.x, point.y, chosen ? 7 : 6, 0, Math.PI * 2);
+ctx.fillStyle = chosen ? "#ea580c" : "#fff7ed";
+ctx.fill();
+ctx.strokeStyle = chosen ? "#9a3412" : "#f97316";
+ctx.lineWidth = 2;
+ctx.stroke();
+}
+}
+}
+
+function jointId(point) {
+return `joint-${Math.round(point.x * 1e7)}-${Math.round(point.y * 1e7)}`;
+}
+
+function jointConnections(joint) {
+const endpoints = [];
+const hosts = [];
+for (const wall of walls) {
+for (const endpoint of ["a", "b"]) {
+if (distance(wall[endpoint], joint) < EPS) endpoints.push({ wallId: wall.id, endpoint });
+}
+const hit = projectOnWall(joint, wall);
+if (hit.distance < EPS && hit.t > EPS && hit.t < 1 - EPS) hosts.push(wall);
+}
+return { endpoints, hosts };
+}
+
+function detachJoint(joint) {
+const connections = jointConnections(joint);
+if (!connections.endpoints.length) return;
+const before = captureHistoryState();
+detachedConnections.push({
+point: { x: joint.x, y: joint.y },
+endpoints: connections.endpoints,
+hostWallIds: connections.hosts.map(wall => wall.id)
+});
+rebuildJoints();
+selected = null;
+recordHistory(before);
+updateInspector();
+notify("Walls detached at joint. Drag an endpoint handle to stretch a wall.");
+render();
+}
+
+function polygon(points, fill, stroke = "#506176", lineWidth = 1) {
+ctx.beginPath();
+points.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+ctx.closePath();
+if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+if (stroke) {
+ctx.strokeStyle = stroke;
+ctx.lineWidth = lineWidth;
+ctx.stroke();
+  }
+}
+
+function line(a, b, color = "#334155", lineWidth = 1) {
+ctx.beginPath();
+ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+ctx.strokeStyle = color; ctx.lineWidth = lineWidth;
+ctx.stroke();
+}
+
+function textAt(text, p, color = "#334155") {
+ctx.font = "12px system-ui";
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+ctx.fillStyle = color;
+ctx.fillText(text, p.x, p.y);
+}
+
+function projectedDepth(points, z = 0) {
+const projected = points.map(p => screen(p, z));
+if (!projected.length) return 0;
+return projected.reduce((sum, p) => sum + p.y, 0) / projected.length;
+}
+
+function prism(points, h, color, selectedObject = false, transparent = false) {
+const bottom = points.map(p => screen(p));
+const top = points.map(p => screen(p, h));
+const faces = points.map((p, i) => {
+const j = (i + 1) % points.length;
+const a = screen(p);
+const b = screen(points[j]);
+return {
+i, j,
+depth: (a.y + b.y) / 2
+    };
+  }).sort((a, b) => a.depth - b.depth);
+
+if (transparent) ctx.globalAlpha = 0.5;
+
+for (const { i, j } of faces) {
+polygon([bottom[i], bottom[j], top[j], top[i]], color);
+polygon([bottom[i], bottom[j], top[j], top[i]], "rgba(0,0,0,0.10)", null);
+  }
+polygon(top, color, selectedObject ? "#2563eb" : "#506176", selectedObject ? 3 : 1);
+
+if (transparent) ctx.globalAlpha = 1.0;
+}
+
+function wallFootprint(w, t0, t1) {
+const a = along(w, t0), b = along(w, t1);
+const { ux, uy } = wallInfo(w);
+const nx = -uy * WALL_THICKNESS / 2, ny = ux * WALL_THICKNESS / 2;
+return [
+    { x: a.x + nx, y: a.y + ny }, { x: b.x + nx, y: b.y + ny },
+    { x: b.x - nx, y: b.y - ny }, { x: a.x - nx, y: a.y - ny }
+  ];
+}
+
+function wallEndpointConnected(wall, endpoint) {
+const point = wall[endpoint];
+return walls.some(other => other.id !== wall.id &&
+(distance(point, other.a) < EPS || distance(point, other.b) < EPS || projectOnWall(point, other).distance < EPS));
+}
+
+function wallFootprintTrimmed(wall, t0, t1) {
+const length = wallInfo(wall).length;
+if (length <= EPS) return null;
+const trimStart = t0 <= EPS && wallEndpointConnected(wall, "a") ? WALL_THICKNESS / (2 * length) : 0;
+const trimEnd = t1 >= 1 - EPS && wallEndpointConnected(wall, "b") ? WALL_THICKNESS / (2 * length) : 0;
+const start = Math.max(0, Math.min(1, t0 + trimStart));
+const end = Math.max(0, Math.min(1, t1 - trimEnd));
+return end > start ? wallFootprint(wall, start, end) : null;
+}
+
+function solidWallSegments(w) {
+const L = wallInfo(w).length;
+if (L === 0) return [];
+const openings = doors.filter(d => d.wallId === w.id)
+    .map(d => [d.t - d.width / (2 * L), d.t + d.width / (2 * L)])
+    .sort((a, b) => a[0] - b[0]);
+let cursor = 0;
+const segments = [];
+for (const [start, end] of openings) {
+if (start > cursor) segments.push([cursor, start]);
+cursor = Math.max(cursor, end);
+  }
+if (cursor < 1) segments.push([cursor, 1]);
+return segments;
+}
+
+function findEnclosedRoomsWithoutDoors() {
+const segments = walls.map(w => ({
+wall: w,
+length: wallInfo(w).length,
+cuts: [0, 1],
+doorIntervals: []
+  })).filter(segment => segment.length > EPS);
+if (segments.length < 3) return [];
+
+const byWallId = new Map(segments.map(segment => [segment.wall.id, segment]));
+for (const door of doors) {
+const segment = byWallId.get(door.wallId);
+if (!segment) continue;
+const halfWidth = door.width / (2 * segment.length);
+const start = Math.max(0, door.t - halfWidth);
+const end = Math.min(1, door.t + halfWidth);
+if (start >= end) continue;
+segment.cuts.push(start, end);
+segment.doorIntervals.push([start, end]);
+  }
+
+const cross = (a, b) => a.x * b.y - a.y * b.x;
+const dot = (a, b) => a.x * b.x + a.y * b.y;
+const addCut = (segment, t) => {
+if (t >= -EPS && t <= 1 + EPS) segment.cuts.push(Math.max(0, Math.min(1, t)));
+  };
+for (let i = 0; i < segments.length; i++) {
+const first = segments[i];
+const a = first.wall.a;
+const r = { x: first.wall.b.x - a.x, y: first.wall.b.y - a.y };
+const rr = dot(r, r);
+for (let j = i + 1; j < segments.length; j++) {
+const second = segments[j];
+const c = second.wall.a;
+const s = { x: second.wall.b.x - c.x, y: second.wall.b.y - c.y };
+const ss = dot(s, s);
+const q = { x: c.x - a.x, y: c.y - a.y };
+const denominator = cross(r, s);
+if (Math.abs(denominator) > EPS) {
+const t = cross(q, s) / denominator;
+const u = cross(q, r) / denominator;
+addCut(first, t);
+addCut(second, u);
+      } else if (Math.abs(cross(q, r)) <= EPS) {
+for (const point of [second.wall.a, second.wall.b]) {
+addCut(first, dot({ x: point.x - a.x, y: point.y - a.y }, r) / rr);
+        }
+for (const point of [first.wall.a, first.wall.b]) {
+addCut(second, dot({ x: point.x - c.x, y: point.y - c.y }, s) / ss);
+        }
+      }
+    }
+  }
+
+const vertices = new Map();
+const edges = new Map();
+const vertexFor = point => {
+const id = `${Math.round(point.x * 1e7)}:${Math.round(point.y * 1e7)}`;
+if (!vertices.has(id)) vertices.set(id, { id, point });
+return vertices.get(id);
+  };
+for (const segment of segments) {
+const w = segment.wall;
+const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y;
+segment.cuts.sort((a, b) => a - b);
+const cuts = segment.cuts.filter((t, index, values) => !index || t - values[index - 1] > EPS);
+for (let i = 0; i < cuts.length - 1; i++) {
+const start = cuts[i], end = cuts[i + 1];
+if (end - start <= EPS) continue;
+const from = vertexFor({ x: w.a.x + dx * start, y: w.a.y + dy * start });
+const to = vertexFor({ x: w.a.x + dx * end, y: w.a.y + dy * end });
+if (from.id === to.id) continue;
+const key = [from.id, to.id].sort().join("|");
+const midpoint = (start + end) / 2;
+const doorOpen = segment.doorIntervals.some(([lo, hi]) => midpoint >= lo - EPS && midpoint <= hi + EPS);
+const existing = edges.get(key);
+if (existing) existing.doorOpen = existing.doorOpen && doorOpen;
+else edges.set(key, { from, to, doorOpen });
+    }
+  }
+
+const outgoing = new Map([...vertices.keys()].map(id => [id, []]));
+const halfEdges = [];
+for (const edge of edges.values()) {
+const forward = { from: edge.from.id, to: edge.to.id, edge, visited: false };
+const reverse = { from: edge.to.id, to: edge.from.id, edge, visited: false };
+forward.reverse = reverse;
+reverse.reverse = forward;
+outgoing.get(forward.from).push(forward);
+outgoing.get(reverse.from).push(reverse);
+halfEdges.push(forward, reverse);
+  }
+for (const [id, list] of outgoing) {
+const origin = vertices.get(id).point;
+list.sort((a, b) => {
+const pointA = vertices.get(a.to).point, pointB = vertices.get(b.to).point;
+return Math.atan2(pointA.y - origin.y, pointA.x - origin.x) -
+Math.atan2(pointB.y - origin.y, pointB.x - origin.x);
+    });
+  }
+
+const roomsWithoutDoors = [];
+for (const first of halfEdges) {
+if (first.visited) continue;
+let current = first;
+const faceVertices = [];
+const faceEdges = [];
+let closed = false;
+for (let step = 0; step <= halfEdges.length; step++) {
+if (current.visited) {
+closed = current === first;
+break;
+      }
+current.visited = true;
+faceVertices.push(vertices.get(current.from).point);
+faceEdges.push(current.edge);
+const nextOptions = outgoing.get(current.to);
+const reverseIndex = nextOptions.indexOf(current.reverse);
+current = nextOptions[(reverseIndex - 1 + nextOptions.length) % nextOptions.length];
+if (current === first) { closed = true; break; }
+    }
+if (!closed || faceVertices.length < 3) continue;
+let area = 0;
+for (let i = 0; i < faceVertices.length; i++) {
+const a = faceVertices[i], b = faceVertices[(i + 1) % faceVertices.length];
+area += a.x * b.y - b.x * a.y;
+    }
+if (area <= EPS) continue;
+const edgeUses = new Map();
+for (const edge of faceEdges) edgeUses.set(edge, (edgeUses.get(edge) || 0) + 1);
+const hasDoor = [...edgeUses].some(([edge, count]) => edge.doorOpen && count === 1);
+if (!hasDoor) roomsWithoutDoors.push(faceVertices);
+  }
+return roomsWithoutDoors;
+}
+
+function drawGrid() {
+const step = gridStep();
+if (!iso) {
+const a = world({ x: 0, y: 0 }), b = world({ x: width, y: height });
+const firstX = Math.floor(a.x / step), lastX = Math.ceil(b.x / step);
+const firstY = Math.floor(a.y / step), lastY = Math.ceil(b.y / step);
+for (let i = firstX; i <= lastX; i++) {
+const x = i * step;
+const major = Math.abs(x - Math.round(x)) < EPS;
+line(screen({ x, y: a.y }), screen({ x, y: b.y }),
+major ? "#c5d0dd" : "#e4eaf1", major ? 1.2 : 0.6);
+    }
+for (let i = firstY; i <= lastY; i++) {
+const y = i * step;
+const major = Math.abs(y - Math.round(y)) < EPS;
+ line(screen({ x: a.x, y }), screen({ x: b.x, y }),
+major ? "#c5d0dd" : "#e4eaf1", major ? 1.2 : 0.6);
+    }
+  } else {
+const modelPoints = [
+...walls.flatMap(w => [w.a, w.b]),
+...joints.flatMap(joint => jointFootprint(joint)),
+...rooms.flatMap(room => room.points),
+...furniture.flatMap(footprint)
+    ];
+if (modelPoints.length === 0) modelPoints.push({ x: 0, y: 0 }, { x: 5, y: 4 });
+let mnX = Infinity, mxX = -Infinity, mnY = Infinity, mxY = -Infinity;
+for (const p of modelPoints) {
+mnX = Math.min(mnX, p.x); mxX = Math.max(mxX, p.x);
+mnY = Math.min(mnY, p.y); mxY = Math.max(mxY, p.y);
+    }
+const minX = Math.floor((mnX - 3) / step) * step;
+const maxX = Math.ceil((mxX + 3) / step) * step;
+const minY = Math.floor((mnY - 3) / step) * step;
+const maxY = Math.ceil((mxY + 3) / step) * step;
+for (let x = minX; x <= maxX; x += step) {
+line(screen({ x, y: minY }), screen({ x, y: maxY }), "#c5d0dd", 0.6);
+    }
+for (let y = minY; y <= maxY; y += step) {
+line(screen({ x: minX, y }), screen({ x: maxX, y }), "#c5d0dd", 0.6);
+    }
+  }
+}
+
+function drawDoor(d) {
+const w = walls.find(w => w.id === d.wallId);
+if (!w) return;
+const { length: L, ux, uy } = wallInfo(w);
+const hinge = along(w, d.t - d.width / (2 * L));
+const closed = along(w, d.t + d.width / (2 * L));
+const nx = -uy * d.swing, ny = ux * d.swing;
+const opened = { x: hinge.x + nx * d.width, y: hinge.y + ny * d.width };
+const color = selected?.id === d.id ? "#2563eb" : "#b7791f";
+
+line(screen(hinge), screen(closed), "#c99a57", 2);
+line(screen(hinge), screen(opened), color, 3);
+ctx.beginPath();
+for (let i = 0; i <= 24; i++) {
+const angle = (i / 24) * Math.PI / 2;
+const p = screen({
+x: hinge.x + d.width * (ux * Math.cos(angle) + nx * Math.sin(angle)),
+y: hinge.y + d.width * (uy * Math.cos(angle) + ny * Math.sin(angle))
+    });
+if (!i) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+  }
+ctx.setLineDash([4, 3]);
+ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.stroke();
+ctx.setLineDash([]);
+}
+
+function drawFurniture2D(f, isColliding) {
+const chosen = selected?.id === f.id || multiSelectedIds.includes(f.id);
+// If colliding, display red warning fill and red border
+const fillColor = isColliding ? "#ef4444" : f.color;
+const strokeColor = chosen ? "#2563eb" : (isColliding ? "#b91c1c" : "#506176");
+const strokeWidth = (chosen || isColliding) ? 3 : 1;
+
+polygon(footprint(f).map(p => screen(p)), fillColor, strokeColor, strokeWidth);
+
+const segment = (x1, y1, x2, y2) =>
+line(screen(furniturePoint(f, x1, y1)),
+screen(furniturePoint(f, x2, y2)), "#ffffff", 2);
+
+if (f.type === "bed") {
+segment(-f.w / 2, -f.d / 2 + 0.4, f.w / 2, -f.d / 2 + 0.4);
+segment(0, -f.d / 2, 0, -f.d / 2 + 0.4);
+  } else if (f.type === "sofa") {
+segment(-f.w / 2, -f.d / 2 + 0.2, f.w / 2, -f.d / 2 + 0.2);
+segment(-f.w / 6, -f.d / 2 + 0.2, -f.w / 6, f.d / 2);
+segment( f.w / 6, -f.d / 2 + 0.2,  f.w / 6, f.d / 2);
+  }
+
+if (scale * f.w > 40) textAt(f.name || "Item", screen(f), isColliding ? "#ffffff" : "#334155");
+
+// Draw rotation & resize handles (only in 2D)
+if (chosen && !iso) {
+ctx.save();
+ctx.translate(screen(f).x, screen(f).y);
+ctx.rotate(f.angle);
+
+// Blue rotation handle
+const rhDist = (f.d / 2) * scale + 25;
+ctx.strokeStyle = "#3498db";
+ctx.lineWidth = 2;
+ctx.beginPath();
+ctx.moveTo(0, 0);
+ctx.lineTo(0, -rhDist);
+ctx.stroke();
+ctx.fillStyle = "#3498db";
+ctx.beginPath();
+ctx.arc(0, -rhDist, 6, 0, Math.PI * 2);
+ctx.fill();
+ctx.strokeStyle = "#fff";
+ctx.lineWidth = 2;
+ctx.stroke();
+
+// Orange resize handle
+const shX = (f.w / 2) * scale;
+const shY = (f.d / 2) * scale;
+ctx.fillStyle = "#e67e22";
+ctx.fillRect(shX - 7, shY - 7, 14, 14);
+ctx.strokeStyle = "#fff";
+ctx.lineWidth = 2;
+ctx.strokeRect(shX - 7, shY - 7, 14, 14);
+
+ctx.restore();
+  }
+}
+
+function rectanglePoints(a, b) {
+const left = Math.min(a.x, b.x), right = Math.max(a.x, b.x);
+const top = Math.min(a.y, b.y), bottom = Math.max(a.y, b.y);
+return [
+  { x: left, y: top }, { x: right, y: top },
+  { x: right, y: bottom }, { x: left, y: bottom }
+];
+}
+
+function roomBounds(room) {
+return {
+left: Math.min(...room.points.map(point => point.x)),
+right: Math.max(...room.points.map(point => point.x)),
+top: Math.min(...room.points.map(point => point.y)),
+bottom: Math.max(...room.points.map(point => point.y))
+  };
+}
+
+function roomHandlePoints(bounds) {
+const midX = (bounds.left + bounds.right) / 2;
+const midY = (bounds.top + bounds.bottom) / 2;
+return {
+n: { x: midX, y: bounds.top }, ne: { x: bounds.right, y: bounds.top },
+e: { x: bounds.right, y: midY }, se: { x: bounds.right, y: bounds.bottom },
+s: { x: midX, y: bounds.bottom }, sw: { x: bounds.left, y: bounds.bottom },
+w: { x: bounds.left, y: midY }, nw: { x: bounds.left, y: bounds.top }
+  };
+}
+
+function drawSelectedRoomHandles() {
+if (iso || selected?.kind !== "room") return;
+const room = selectedObject();
+if (!room) return;
+ctx.save();
+for (const point of Object.values(roomHandlePoints(roomBounds(room)))) {
+const p = screen(point);
+ctx.fillStyle = "#ffffff";
+ctx.strokeStyle = "#2563eb";
+ctx.lineWidth = 2;
+ctx.fillRect(p.x - 5, p.y - 5, 10, 10);
+ctx.strokeRect(p.x - 5, p.y - 5, 10, 10);
+  }
+ctx.restore();
+}
+
+function drawRoom(room, isSelected = false) {
+const projected = room.points.map(point => screen(point, 0));
+ctx.save();
+ctx.globalAlpha = 0.24;
+polygon(projected, room.color, null);
+ctx.globalAlpha = 0.85;
+polygon(projected, null, isSelected ? "#2563eb" : room.color, isSelected ? 2.5 : 1.2);
+ctx.restore();
+if (room.name) {
+const center = room.points.reduce((sum, point) => ({ x: sum.x + point.x / 4, y: sum.y + point.y / 4 }), { x: 0, y: 0 });
+textAt(room.name, screen(center, 0), "#203044");
+  }
+}
+
+function render() {
+ctx.clearRect(0, 0, width, height);
+ctx.fillStyle = "#f8fafc";
+ctx.fillRect(0, 0, width, height);
+drawGrid();
+
+const roomsWithoutDoors = findEnclosedRoomsWithoutDoors();
+for (const room of roomsWithoutDoors) {
+polygon(room.map(point => screen(point)), "rgba(248, 113, 113, 0.22)", "rgba(220, 38, 38, 0.55)", 1.5);
+  }
+rooms.forEach(room => drawRoom(room, selected?.kind === "room" && selected.id === room.id));
+
+const collidingIds = getCollidingFurnitureIds();
+
+if (!iso) {
+for (const w of walls) {
+for (const [a, b] of solidWallSegments(w)) {
+const points = wallFootprintTrimmed(w, a, b);
+if (points) polygon(points.map(p => screen(p)), "#64748b",
+selected?.id === w.id ? "#2563eb" : "#475569",
+selected?.id === w.id ? 3 : 1);
+      }
+const mid = screen(along(w, 0.5));
+textAt(wallInfo(w).length.toFixed(2) + " m", { x: mid.x, y: mid.y - 13 });
+    }
+joints.forEach(drawJoint2D);
+drawWallEndpointHandles();
+doors.forEach(drawDoor);
+furniture.forEach(f => drawFurniture2D(f, collidingIds.has(f.id)));
+drawCloseFurnitureBars();
+  } else {
+const objects = [];
+for (const w of walls) {
+for (const [a, b] of solidWallSegments(w)) {
+const points = wallFootprintTrimmed(w, a, b);
+if (!points) continue;
+objects.push({
+points, h: CUTAWAY_HEIGHT, color: "#cbd5e1",
+id: w.id,
+depth: projectedDepth(points),
+transparent: true
+        });
+      }
+    }
+  for (const joint of joints) {
+  const points = jointFootprint(joint);
+  objects.push({
+  points, h: CUTAWAY_HEIGHT, color: "#64748b", id: joint.id,
+  depth: projectedDepth(points), transparent: false
+        });
+      }
+for (const door of doors) {
+const wall = walls.find(item => item.id === door.wallId);
+if (!wall) continue;
+const length = wallInfo(wall).length;
+if (length <= EPS) continue;
+const halfOpening = door.width / (2 * length);
+const start = Math.max(0, door.t - halfOpening);
+const end = Math.min(1, door.t + halfOpening);
+const points = wallFootprint(wall, start, end);
+objects.push({
+points, h: CUTAWAY_HEIGHT, color: "#b7791f", id: door.id,
+depth: projectedDepth(points), transparent: true
+      });
+    }
+for (const f of furniture) {
+const isColliding = collidingIds.has(f.id);
+objects.push({
+points: footprint(f), h: f.h, color: isColliding ? "#ef4444" : f.color,
+id: f.id, depth: projectedDepth(footprint(f)),
+transparent: false
+      });
+    }
+doors.forEach(drawDoor);
+objects.sort((a, b) => a.depth - b.depth);
+objects.forEach(o => prism(o.points, o.h, o.color, selected?.id === o.id, o.transparent));
+  }
+
+drawSelectedRoomHandles();
+
+if (draft?.kind === "room") {
+drawRoom({ points: rectanglePoints(draft.a, draft.b), color: "#bfe3d0", name: "" });
+  } else if (draft) {
+line(screen(draft.a), screen(draft.b), draft.invalid ? "#dc2626" : "#2563eb", Math.max(2, WALL_THICKNESS * scale));
+const p = screen(draft.b);
+textAt(distance(draft.a, draft.b).toFixed(2) + " m", { x: p.x, y: p.y - 18 }, draft.invalid ? "#dc2626" : "#2563eb");
+  }
+
+if (activeSnap && !iso) {
+const sp = screen(activeSnap.point);
+ctx.save();
+if (activeSnap.snapInfo?.type === "vertex") {
+ctx.strokeStyle = "#16a34a";
+ctx.lineWidth = 2.5;
+ctx.beginPath();
+ctx.arc(sp.x, sp.y, 8, 0, Math.PI * 2);
+ctx.stroke();
+ctx.fillStyle = "#22c55e";
+ctx.beginPath();
+ctx.arc(sp.x, sp.y, 3, 0, Math.PI * 2);
+ctx.fill();
+    } else if (activeSnap.snapInfo?.type === "edge") {
+ctx.strokeStyle = "#0891b2";
+ctx.lineWidth = 2;
+ctx.beginPath();
+ctx.moveTo(sp.x, sp.y - 7);
+ctx.lineTo(sp.x + 7, sp.y);
+ctx.lineTo(sp.x, sp.y + 7);
+ctx.lineTo(sp.x - 7, sp.y);
+ctx.closePath();
+ctx.stroke();
+    }
+ctx.restore();
+  }
+
+if (marquee && !iso) {
+const a = screen(marquee.start), b = screen(marquee.end);
+const left = Math.min(a.x, b.x), top = Math.min(a.y, b.y);
+const rectWidth = Math.abs(b.x - a.x), rectHeight = Math.abs(b.y - a.y);
+ctx.fillStyle = "rgba(37, 99, 235, 0.12)";
+ctx.strokeStyle = "#2563eb";
+ctx.lineWidth = 1;
+ctx.setLineDash([5, 3]);
+ctx.fillRect(left, top, rectWidth, rectHeight);
+ctx.strokeRect(left, top, rectWidth, rectHeight);
+ctx.setLineDash([]);
+  }
+
+const collisionNote = collidingIds.size > 0 ? " · ⚠️ Overlap detected (red)" : "";
+$("badge").textContent = (iso
+? "3D preview · left‑drag rotate · right‑drag pan · wheel zoom"
+: `2D plan · Grid ${gridStep()} m · ${Math.round(scale)} px/m`) + collisionNote;
+const roomWarning = $("roomWarning");
+roomWarning.hidden = roomsWithoutDoors.length === 0;
+roomWarning.textContent = roomsWithoutDoors.length === 1
+? "Enclosed area has no door"
+: `${roomsWithoutDoors.length} enclosed areas have no doors`;
+renderCloseFurnitureWarning();
+const detachButton = $("detachJoint");
+const selectedJoint = selected?.kind === "joint" ? selectedObject() : null;
+detachButton.hidden = !selectedJoint || iso;
+if (selectedJoint && !iso) {
+const position = screen(selectedJoint);
+detachButton.style.left = `${position.x}px`;
+detachButton.style.top = `${position.y}px`;
+  }
+}
+
+function fitView() {
+const points = [
+...walls.flatMap(w => [w.a, w.b]),
+...rooms.flatMap(room => room.points),
+...furniture.flatMap(footprint)
+  ];
+if (!points.length) points.push({ x: 0, y: 0 }, { x: 5, y: 4 });
+if (iso) {
+let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+for (const p of points) {
+minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+    }
+target = { x: (minX + maxX) / 2, y: (minY + maxY) / 2, z: 0 };
+  }
+
+camera = { x: 0, y: 0 }; scale = 1;
+
+const projected = points.flatMap(p =>
+iso ? [screen(p), screen(p, 2)] : [screen(p)]
+  );
+const minX = Math.min(...projected.map(p => p.x));
+const maxX = Math.max(...projected.map(p => p.x));
+const minY = Math.min(...projected.map(p => p.y));
+const maxY = Math.max(...projected.map(p => p.y));
+
+scale = Math.max(60, Math.min(1600,
+    (width - 100) / Math.max(1, maxX - minX),
+    (height - 100) / Math.max(1, maxY - minY)
+  ));
+
+if (iso) {
+const sp = screen(target, target.z);
+camera = { x: width / 2 - sp.x, y: height / 2 - sp.y };
+  } else {
+camera = {
+x: width / 2 - (minX + maxX) / 2 * scale,
+y: height / 2 - (minY + maxY) / 2 * scale
+    };
+  }
+render();
+}
+
+function canPlaceDoor(d, w, t) {
+const L = wallInfo(w).length;
+if (d.width > L - 0.1) return false;
+return !doors.some(other =>
+other.id !== d.id && other.wallId === w.id &&
+Math.abs(other.t - t) * L < (other.width + d.width) / 2 + 0.05
+  );
+}
+
+function doorPosition(d, w, p) {
+const L = wallInfo(w).length;
+const margin = (d.width / 2 + 0.05) / L;
+if (margin > 0.5) return null;
+const raw = projectOnWall(p, w).t * L;
+const snapped = Math.round(raw / gridStep()) * gridStep() / L;
+const t = Math.max(margin, Math.min(1 - margin, snapped));
+return canPlaceDoor(d, w, t) ? t : null;
+}
+
+function addDoor(p) {
+const hit = nearestWall(p);
+if (!hit || hit.distance > Math.max(0.15, 12 / scale)) {
+notify("Click close to a wall to add a door."); return;
+  }
+const doorWidth = Number($("doorWidth").value);
+if (!Number.isFinite(doorWidth) || doorWidth < 0.4 || doorWidth > 2.4) {
+notify("Choose a door width between 0.4 m and 2.4 m."); return;
+  }
+const historyBefore = captureHistoryState();
+const d = { id: uid(), wallId: hit.wall.id, width: doorWidth, t: 0.5, swing: 1 };
+const t = doorPosition(d, hit.wall, p);
+if (t === null) {
+notify("Not enough room here: doors need end clearance and cannot overlap.");
+return;
+  }
+d.t = t; doors.push(d);
+recordHistory(historyBefore);
+refreshCloseFurnitureWarnings();
+selected = { kind: "door", id: d.id };
+updateInspector();
+notify("Door added. Use Select / Move to slide it along the wall.");
+render();
+}
+
+function pick(p) {
+for (const joint of [...joints].reverse()) {
+if (distance(p, joint) < Math.max(0.1, JOINT_SIZE / 2 + 0.02)) {
+return { kind: "joint", id: joint.id };
+    }
+  }
+for (const d of [...doors].reverse()) {
+const w = walls.find(w => w.id === d.wallId);
+if (!w) continue;
+const hit = projectOnWall(p, w);
+if (hit.distance < Math.max(0.15, 10 / scale) &&
+Math.abs(hit.t - d.t) * wallInfo(w).length <= d.width / 2) {
+return { kind: "door", id: d.id };
+    }
+  }
+for (const f of [...furniture].reverse()) {
+if (insideFurniture(p, f)) return { kind: "furniture", id: f.id };
+  }
+const hit = nearestWall(p);
+if (hit && hit.distance < Math.max(0.1, 8 / scale)) {
+return { kind: "wall", id: hit.wall.id };
+  }
+for (const room of [...rooms].reverse()) {
+if (isPointInPoly(p, room.points)) return { kind: "room", id: room.id };
+  }
+return null;
+}
+
+function selectedObject() {
+if (!selected) return null;
+const list = selected.kind === "wall" ? walls :
+selected.kind === "door" ? doors :
+selected.kind === "joint" ? joints :
+selected.kind === "room" ? rooms : furniture;
+return list.find(o => o.id === selected.id);
+}
+
+function canPlaceOnSurface(parent, childType) {
+if (!parent || !parent.supportsSurface) return false;
+if (!parent.surfaceTypes || !parent.surfaceTypes.length) return !!SURFACE_SUPPORT.has(childType);
+return parent.surfaceTypes.includes(childType) || parent.surfaceTypes.includes("custom");
+}
+
+function syncSurfaceChildren(parent) {
+if (!parent || !parent.supportsSurface) return;
+const c = Math.cos(parent.angle), s = Math.sin(parent.angle);
+for (const item of furniture) {
+if (item.parentId !== parent.id || !item.surfaceOffset) continue;
+const { x: offX, y: offY } = item.surfaceOffset;
+item.x = parent.x + offX * c - offY * s;
+item.y = parent.y + offX * s + offY * c;
+  }
+}
+
+function tryAttachSurfaceItem(item, pointer) {
+if (!item || item.parentId) return false;
+const parent = [...furniture].reverse().find(other =>
+other.id !== item.id && other.supportsSurface && canPlaceOnSurface(other, item.type || "custom")
+);
+if (!parent) return false;
+const local = toLocal(parent, pointer);
+const allowedW = parent.w * 0.38;
+const allowedD = parent.d * 0.38;
+if (Math.abs(local.x) > allowedW || Math.abs(local.y) > allowedD) return false;
+item.parentId = parent.id;
+item.surfaceOffset = { x: local.x, y: local.y };
+const c = Math.cos(parent.angle), s = Math.sin(parent.angle);
+item.x = parent.x + local.x * c - local.y * s;
+item.y = parent.y + local.x * s + local.y * c;
+return true;
+}
+
+function groupForFurniture(itemId) {
+return groups.find(group => group.itemIds.includes(itemId)) || null;
+}
+
+function updateGroupSelectionUI() {
+$("createGroup").disabled = multiSelectedIds.length < 2;
+const selectedIds = new Set(selectedFurnitureIds());
+$("groupsList").querySelectorAll(".furniture-group-members button[data-item-id]").forEach(button => {
+button.setAttribute("aria-pressed", String(selectedIds.has(button.dataset.itemId)));
+});
+}
+
+function selectedFurnitureIds() {
+const ids = multiSelectedIds.length ? multiSelectedIds : selected?.kind === "furniture" ? [selected.id] : [];
+return [...new Set(ids.filter(id => furniture.some(item => item.id === id)))];
+}
+
+function selectFurnitureFromGroup(itemId, shiftKey = false) {
+if (shiftKey) {
+toggleFurnitureSelection(itemId);
+return;
+}
+selected = { kind: "furniture", id: itemId };
+multiSelectedIds = [];
+updateInspector();
+updateGroupSelectionUI();
+renderGroups();
+render();
+}
+
+function selectGroupFromList(group) {
+multiSelectedIds = group.itemIds.filter(id => furniture.some(item => item.id === id));
+selected = multiSelectedIds.length ? { kind: "furniture", id: multiSelectedIds[multiSelectedIds.length - 1] } : null;
+updateInspector();
+updateGroupSelectionUI();
+renderGroups();
+render();
+}
+
+function toggleFurnitureSelection(itemId) {
+multiSelectedIds = selectedFurnitureIds();
+const index = multiSelectedIds.indexOf(itemId);
+if (index >= 0) multiSelectedIds.splice(index, 1);
+else multiSelectedIds.push(itemId);
+selected = multiSelectedIds.length ? { kind: "furniture", id: multiSelectedIds[multiSelectedIds.length - 1] } : null;
+updateInspector();
+updateGroupSelectionUI();
+renderGroups();
+render();
+}
+
+function renderGroups() {
+const list = $("groupsList");
+const emptyState = $("groupsEmptyState");
+list.replaceChildren();
+emptyState.hidden = groups.length > 0;
+if (!groups.length) {
+updateGroupSelectionUI();
+return;
+  }
+for (const group of groups) {
+const card = document.createElement("section");
+card.className = "furniture-group";
+card.style.setProperty("--group-color", group.color || "#60a5fa");
+const header = document.createElement("div");
+header.className = "furniture-group-header";
+const name = document.createElement("button");
+name.type = "button";
+name.className = "group-name-button";
+name.textContent = group.name;
+name.title = `Select all furniture in ${group.name}`;
+name.setAttribute("aria-label", `Select all furniture in ${group.name}`);
+name.onclick = () => selectGroupFromList(group);
+const collapse = document.createElement("button");
+collapse.type = "button";
+collapse.className = "group-icon-button";
+collapse.textContent = group.collapsed ? "↓" : "↑";
+collapse.setAttribute("aria-label", `${group.collapsed ? "Expand" : "Collapse"} ${group.name}`);
+collapse.title = collapse.getAttribute("aria-label");
+collapse.onclick = () => {
+const before = captureHistoryState();
+group.collapsed = !group.collapsed;
+recordHistory(before);
+renderGroups();
+    };
+const menuButton = document.createElement("button");
+menuButton.type = "button";
+menuButton.className = "group-icon-button";
+menuButton.textContent = "...";
+menuButton.setAttribute("aria-label", `More options for ${group.name}`);
+menuButton.title = menuButton.getAttribute("aria-label");
+header.append(name, collapse, menuButton);
+card.appendChild(header);
+
+const members = document.createElement("div");
+members.className = "furniture-group-members";
+members.hidden = !!group.collapsed;
+const memberItems = group.itemIds.map(id => furniture.find(item => item.id === id)).filter(Boolean);
+if (!memberItems.length) {
+const empty = document.createElement("small");
+empty.textContent = "No furniture in this group.";
+members.appendChild(empty);
+} else {
+for (const item of memberItems) {
+const member = document.createElement("button");
+member.type = "button";
+member.className = "secondary";
+member.dataset.itemId = item.id;
+member.textContent = item.name || "Item";
+member.setAttribute("aria-pressed", String(selectedFurnitureIds().includes(item.id)));
+member.onclick = event => selectFurnitureFromGroup(item.id, event.shiftKey);
+members.appendChild(member);
+      }
+    }
+card.appendChild(members);
+
+const menu = document.createElement("div");
+menu.className = "group-menu";
+menu.hidden = true;
+menuButton.onclick = () => { menu.hidden = !menu.hidden; };
+const colorLabel = document.createElement("label");
+colorLabel.append("Accent color");
+const colorInput = document.createElement("input");
+colorInput.type = "color";
+colorInput.value = group.color || "#60a5fa";
+colorInput.setAttribute("aria-label", `Accent color for ${group.name}`);
+colorLabel.appendChild(colorInput);
+const colorActions = document.createElement("div");
+colorActions.className = "group-color-actions";
+const applyColor = document.createElement("button");
+applyColor.type = "button";
+applyColor.className = "group-color-apply";
+applyColor.textContent = "Apply";
+applyColor.onclick = () => {
+if (colorInput.value === (group.color || "#60a5fa")) return;
+const before = captureHistoryState();
+group.color = colorInput.value;
+recordHistory(before);
+renderGroups();
+    };
+const cancelColor = document.createElement("button");
+cancelColor.type = "button";
+cancelColor.textContent = "Cancel";
+cancelColor.onclick = () => { colorInput.value = group.color || "#60a5fa"; };
+colorActions.append(applyColor, cancelColor);
+const transformLabel = document.createElement("label");
+transformLabel.append("Transform together");
+const transformInput = document.createElement("input");
+transformInput.type = "checkbox";
+transformInput.checked = group.transformTogether !== false;
+transformInput.setAttribute("aria-label", `Transform ${group.name} together`);
+transformInput.onchange = () => {
+const before = captureHistoryState();
+group.transformTogether = transformInput.checked;
+recordHistory(before);
+    };
+transformLabel.appendChild(transformInput);
+const dismiss = document.createElement("button");
+dismiss.type = "button";
+dismiss.className = "secondary";
+dismiss.textContent = "Dismiss group";
+dismiss.onclick = () => {
+const before = captureHistoryState();
+groups = groups.filter(item => item.id !== group.id);
+recordHistory(before);
+renderGroups();
+notify(`${group.name} dismissed. Its furniture remains on the plan.`);
+    };
+menu.append(colorLabel, colorActions, transformLabel, dismiss);
+card.appendChild(menu);
+list.appendChild(card);
+  }
+updateGroupSelectionUI();
+}
+
+function createFurnitureGroup() {
+const itemIds = [...new Set(multiSelectedIds)].filter(id => furniture.some(item => item.id === id));
+if (itemIds.length < 2) return;
+const before = captureHistoryState();
+const group = {
+id: uid(), name: $("groupNameInput").value.trim() || `Group ${groups.length + 1}`,
+color: "#60a5fa", transformTogether: true, collapsed: false, itemIds
+  };
+groups = groups.filter(existing => {
+existing.itemIds = existing.itemIds.filter(id => !itemIds.includes(id));
+return existing.itemIds.length > 0;
+  });
+groups.push(group);
+multiSelectedIds = [];
+selected = null;
+$("groupNameInput").value = "";
+$("groupNameForm").hidden = true;
+recordHistory(before);
+updateInspector();
+renderGroups();
+render();
+notify(`${group.name} created.`);
+}
+
+function captureGroupTransform(itemId) {
+const group = groupForFurniture(itemId);
+if (!group || group.transformTogether === false) return null;
+const selectedIds = new Set(selectedFurnitureIds());
+selectedIds.add(itemId);
+const members = group.itemIds.filter(id => selectedIds.has(id)).map(id => furniture.find(item => item.id === id)).filter(Boolean)
+.map(item => ({
+id: item.id, x: item.x, y: item.y, w: item.w, d: item.d, angle: item.angle,
+parentId: item.parentId || null,
+surfaceOffset: item.surfaceOffset ? { ...item.surfaceOffset } : null
+  }));
+if (!members.length) return null;
+const center = members.reduce((sum, item) => ({ x: sum.x + item.x / members.length, y: sum.y + item.y / members.length }), { x: 0, y: 0 });
+return { groupId: group.id, itemId, members, center };
+}
+
+function captureFurnitureTransform(itemId) {
+const selectedIds = selectedFurnitureIds();
+if (selectedIds.length <= 1) return captureGroupTransform(itemId);
+const members = selectedIds.map(id => furniture.find(item => item.id === id)).filter(Boolean)
+.map(item => ({
+id: item.id, x: item.x, y: item.y, w: item.w, d: item.d, angle: item.angle,
+parentId: item.parentId || null,
+surfaceOffset: item.surfaceOffset ? { ...item.surfaceOffset } : null
+  }));
+if (!members.length) return null;
+const center = members.reduce((sum, item) => ({ x: sum.x + item.x / members.length, y: sum.y + item.y / members.length }), { x: 0, y: 0 });
+return { groupId: null, itemId, members, center };
+}
+
+function syncGroupSurfaceAttachments(snapshot, updateAttachedOffsets = false) {
+const memberIds = new Set(snapshot.members.map(member => member.id));
+for (const member of snapshot.members) {
+if (!member.parentId || memberIds.has(member.parentId)) continue;
+const item = furniture.find(candidate => candidate.id === member.id);
+const parent = furniture.find(candidate => candidate.id === member.parentId);
+if (!item || !parent) continue;
+const offset = toLocal(parent, item);
+if (Math.abs(offset.x) > parent.w / 2 || Math.abs(offset.y) > parent.d / 2) {
+delete item.parentId;
+delete item.surfaceOffset;
+} else {
+item.surfaceOffset = offset;
+  }
+}
+for (const member of snapshot.members) {
+if (member.parentId && memberIds.has(member.parentId)) {
+const item = furniture.find(candidate => candidate.id === member.id);
+const parent = furniture.find(candidate => candidate.id === member.parentId);
+if (item && parent && updateAttachedOffsets) item.surfaceOffset = toLocal(parent, item);
+else if (item) item.surfaceOffset = member.surfaceOffset ? { ...member.surfaceOffset } : item.surfaceOffset;
+    }
+const parent = furniture.find(candidate => candidate.id === member.id);
+if (parent?.supportsSurface) syncSurfaceChildren(parent);
+  }
+}
+
+function translateGroupFromSnapshot(snapshot, rootId, position) {
+const root = snapshot?.members.find(member => member.id === rootId);
+if (!root) return;
+const dx = position.x - root.x, dy = position.y - root.y;
+for (const member of snapshot.members) {
+const item = furniture.find(candidate => candidate.id === member.id);
+if (!item) continue;
+item.x = member.x + dx;
+item.y = member.y + dy;
+  }
+syncGroupSurfaceAttachments(snapshot);
+}
+
+function rotateGroupFromSnapshot(snapshot, delta) {
+if (!snapshot?.members.length) return;
+const c = Math.cos(delta), s = Math.sin(delta);
+const memberIds = new Set(snapshot.members.map(member => member.id));
+for (const member of snapshot.members) {
+const item = furniture.find(candidate => candidate.id === member.id);
+if (!item) continue;
+item.angle = member.angle + delta;
+if (member.parentId && memberIds.has(member.parentId)) continue;
+const dx = member.x - snapshot.center.x, dy = member.y - snapshot.center.y;
+item.x = snapshot.center.x + dx * c - dy * s;
+item.y = snapshot.center.y + dx * s + dy * c;
+  }
+syncGroupSurfaceAttachments(snapshot);
+}
+
+function scaleGroupFromSnapshot(snapshot, rootId, width, depth) {
+const root = snapshot?.members.find(member => member.id === rootId);
+if (!root) return;
+const scaleX = Math.max(0.2, width) / root.w;
+const scaleY = Math.max(0.2, depth) / root.d;
+const c = Math.cos(root.angle), s = Math.sin(root.angle);
+for (const member of snapshot.members) {
+const item = furniture.find(candidate => candidate.id === member.id);
+if (!item) continue;
+const dx = member.x - snapshot.center.x, dy = member.y - snapshot.center.y;
+const localX = dx * c + dy * s;
+const localY = -dx * s + dy * c;
+item.x = snapshot.center.x + localX * scaleX * c - localY * scaleY * s;
+item.y = snapshot.center.y + localX * scaleX * s + localY * scaleY * c;
+item.w = Math.max(0.2, member.w * scaleX);
+item.d = Math.max(0.2, member.d * scaleY);
+  }
+syncGroupSurfaceAttachments(snapshot, true);
+}
+
+/* --- Furniture Inspector & Custom Dimensions --- */
+function bindInspectorField(input, item, property, minimum = null) {
+input.addEventListener("focus", () => {
+inspectorHistoryBefore = captureHistoryState();
+updateHistoryButtons();
+  });
+input.addEventListener("input", event => {
+const value = input.type === "color" ? event.target.value : parseFloat(event.target.value);
+if (input.type !== "color" && (!Number.isFinite(value) || value < minimum)) return;
+item[property] = value;
+if (property === "w" || property === "d") refreshCloseFurnitureWarnings();
+updateHistoryButtons();
+render();
+  });
+input.addEventListener("blur", flushInspectorHistory);
+}
+
+function createFurnitureInspectorPanel(item, index, total) {
+const panel = document.createElement("div");
+panel.className = "section-box selected-furniture-panel";
+const heading = document.createElement("h4");
+if (total > 1) {
+heading.textContent = `Furniture ${index + 1}`;
+panel.appendChild(heading);
+  }
+
+const nameRow = document.createElement("div");
+nameRow.className = "input-row";
+const nameLabel = document.createElement("span");
+nameLabel.className = "custom-name-label";
+nameLabel.textContent = "Name";
+const nameDisplay = document.createElement("button");
+nameDisplay.type = "button";
+nameDisplay.className = "inspector-name-display";
+nameDisplay.textContent = item.name || "Furniture";
+nameDisplay.setAttribute("aria-label", `Edit name for ${item.name || "furniture"}`);
+const nameInput = document.createElement("input");
+nameInput.type = "text";
+nameInput.value = item.name || "";
+nameInput.setAttribute("aria-label", `Name for ${item.name || "furniture"}`);
+nameInput.style.width = "100%";
+nameInput.hidden = true;
+nameInput.addEventListener("focus", () => {
+inspectorHistoryBefore = captureHistoryState();
+updateHistoryButtons();
+  });
+nameInput.addEventListener("input", () => {
+item.name = nameInput.value;
+renderGroups();
+render();
+updateHistoryButtons();
+  });
+let nameBeforeEdit = nameInput.value;
+const finishNameEdit = commit => {
+if (nameInput.hidden) return;
+if (!commit) nameInput.value = nameBeforeEdit;
+item.name = nameInput.value.trim() || "Furniture";
+nameDisplay.textContent = item.name;
+nameDisplay.setAttribute("aria-label", `Edit name for ${item.name}`);
+nameInput.value = item.name;
+nameInput.setAttribute("aria-label", `Name for ${item.name}`);
+nameInput.hidden = true;
+nameDisplay.hidden = false;
+renderGroups();
+render();
+flushInspectorHistory();
+  };
+nameDisplay.onclick = () => {
+nameBeforeEdit = nameInput.value;
+nameDisplay.hidden = true;
+nameInput.hidden = false;
+nameInput.focus();
+nameInput.select();
+  };
+nameInput.addEventListener("keydown", event => {
+if (event.key === "Enter") {
+event.preventDefault();
+finishNameEdit(true);
+nameDisplay.focus();
+} else if (event.key === "Escape") {
+event.preventDefault();
+finishNameEdit(false);
+nameDisplay.focus();
+    }
+  });
+nameInput.addEventListener("blur", () => finishNameEdit(true));
+nameRow.append(nameLabel, nameDisplay, nameInput);
+panel.appendChild(nameRow);
+
+const addField = (row, labelText, property, type, minimum = null, maximum = null) => {
+const label = document.createElement("label");
+label.textContent = labelText;
+const input = document.createElement("input");
+input.type = type;
+input.value = type === "color" ? item[property] : round2(item[property]);
+if (type === "number") {
+input.step = "0.05";
+input.min = String(minimum);
+input.max = String(maximum);
+input.addEventListener("change", () => { input.value = round2(item[property]); });
+  }
+bindInspectorField(input, item, property, minimum);
+label.appendChild(input);
+row.appendChild(label);
+  };
+const dimensions = document.createElement("div");
+dimensions.className = "input-group";
+addField(dimensions, "Length (m)", "w", "number", 0.2, 15);
+addField(dimensions, "Width (m)", "d", "number", 0.2, 15);
+panel.appendChild(dimensions);
+const details = document.createElement("div");
+details.className = "input-group";
+addField(details, "Height (m)", "h", "number", 0.1, 5);
+addField(details, "Color", "color", "color");
+panel.appendChild(details);
+return panel;
+}
+
+function updateInspector() {
+const insp = $("inspector");
+const roomInsp = $("roomInspector");
+$("inspectorPanel").style.display = "none";
+insp.style.display = "none";
+roomInsp.style.display = "none";
+if (selected?.kind === "room") {
+const room = selectedObject();
+if (room) {
+$("inspectorPanel").style.display = "flex";
+$("roomName").value = room.name || "";
+$("roomColor").value = room.color || "#bfe3d0";
+roomInsp.style.display = "block";
+return;
+    }
+  }
+const items = selectedFurnitureIds().map(id => furniture.find(item => item.id === id)).filter(Boolean);
+if (!items.length) return;
+insp.replaceChildren(...items.map((item, index) => createFurnitureInspectorPanel(item, index, items.length)));
+insp.style.display = "grid";
+$("inspectorPanel").style.display = "flex";
+}
+
+$("roomName").addEventListener("input", e => {
+const room = selectedObject();
+if (room && selected?.kind === "room") { room.name = e.target.value; render(); }
+});
+$("roomColor").addEventListener("input", e => {
+const room = selectedObject();
+if (room && selected?.kind === "room") { room.color = e.target.value; render(); }
+});
+
+for (const id of ["roomName", "roomColor"]) {
+const field = $(id);
+field.addEventListener("focus", () => {
+inspectorHistoryBefore = captureHistoryState();
+updateHistoryButtons();
+  });
+field.addEventListener("input", updateHistoryButtons);
+field.addEventListener("blur", flushInspectorHistory);
+}
+
+function createCustomFurnitureData() {
+const name = $("custName").value.trim() || "Custom Item";
+const w = Math.max(0.2, parseFloat($("custW").value) || 1.0);
+const d = Math.max(0.2, parseFloat($("custD").value) || 0.8);
+const h = Math.max(0.1, parseFloat($("custH").value) || 0.75);
+const color = $("custColor").value || "#7ea8d8";
+return { name, w, d, h, color, type: "custom" };
+}
+
+const customNameInput = $("custName");
+const customNameDisplay = $("custNameDisplay");
+let customNameBeforeEdit = customNameInput.value;
+function finishCustomNameEdit(commit) {
+if (customNameInput.hidden) return;
+if (!commit) customNameInput.value = customNameBeforeEdit;
+customNameInput.value = customNameInput.value.trim() || "Custom Item";
+customNameDisplay.textContent = customNameInput.value;
+customNameInput.hidden = true;
+customNameDisplay.hidden = false;
+}
+customNameDisplay.onclick = () => {
+customNameBeforeEdit = customNameInput.value;
+customNameDisplay.hidden = true;
+customNameInput.hidden = false;
+customNameInput.focus();
+customNameInput.select();
+};
+customNameInput.addEventListener("keydown", event => {
+if (event.key === "Enter") {
+event.preventDefault();
+finishCustomNameEdit(true);
+customNameDisplay.focus();
+} else if (event.key === "Escape") {
+event.preventDefault();
+finishCustomNameEdit(false);
+customNameDisplay.focus();
+  }
+});
+customNameInput.addEventListener("blur", () => finishCustomNameEdit(true));
+
+$("addCustom").onclick = () => {
+if (iso) return;
+const data = createCustomFurnitureData();
+const centerWorld = world({ x: width / 2, y: height / 2 });
+const p = snap(centerWorld);
+const f = { ...data, id: uid(), x: p.x, y: p.y, angle: 0 };
+const historyBefore = captureHistoryState();
+if (!tryAttachSurfaceItem(f, p)) {
+  furniture.push(f);
+  selected = { kind: "furniture", id: f.id };
+  setTool("select");
+  updateInspector();
+  notify(`Added ${f.name} (${f.w} × ${f.d} m). Drag or rotate.`);
+} else {
+  furniture.push(f);
+  selected = { kind: "furniture", id: f.id };
+  setTool("select");
+  updateInspector();
+  notify(`${f.name} placed on a supported surface.`);
+}
+multiSelectedIds = [];
+updateGroupSelectionUI();
+recordHistory(historyBefore);
+render();
+};
+
+const customDrag = $("customDraggable");
+customDrag.addEventListener("dragstart", e => {
+e.dataTransfer.setData("text/plain", "custom_maker");
+e.dataTransfer.effectAllowed = "copy";
+});
+
+function rotateSelected() {
+if (iso) return;
+const o = selectedObject();
+if (!o) return;
+const historyBefore = captureHistoryState();
+if (selected.kind === "furniture") {
+const snapshot = captureFurnitureTransform(o.id);
+if (snapshot) rotateGroupFromSnapshot(snapshot, Math.PI / 2);
+else {
+o.angle += Math.PI / 2;
+if (o.supportsSurface) syncSurfaceChildren(o);
+  }
+}
+if (selected.kind === "door") o.swing *= -1;
+if (selected.kind === "wall") {
+const center = { x: (o.a.x + o.b.x) / 2, y: (o.a.y + o.b.y) / 2 };
+const start = { x: o.a.x - center.x, y: o.a.y - center.y };
+const end = { x: o.b.x - center.x, y: o.b.y - center.y };
+o.a = snap({ x: center.x - start.y, y: center.y + start.x });
+o.b = snap({ x: center.x - end.y, y: center.y + end.x });
+clearDetachedWall(o.id);
+rebuildJoints();
+}
+recordHistory(historyBefore);
+refreshCloseFurnitureWarnings();
+render();
+}
+
+function deleteSelected() {
+if (iso || !selected) return;
+const historyBefore = captureHistoryState();
+const { kind, id } = selected;
+if (kind === "wall") {
+walls = walls.filter(w => w.id !== id);
+doors = doors.filter(d => d.wallId !== id);
+clearDetachedWall(id);
+rebuildJoints();
+  } else if (kind === "door") {
+doors = doors.filter(d => d.id !== id);
+  } else if (kind === "joint") {
+joints = joints.filter(joint => joint.id !== id);
+  } else if (kind === "room") {
+rooms = rooms.filter(room => room.id !== id);
+  } else {
+const selectedIds = new Set(multiSelectedIds.length > 1 ? multiSelectedIds : [id]);
+const removedIds = new Set(furniture.filter(item => selectedIds.has(item.id) || selectedIds.has(item.parentId)).map(item => item.id));
+furniture = furniture.filter(item => !removedIds.has(item.id));
+groups = groups.map(group => ({ ...group, itemIds: group.itemIds.filter(itemId => !removedIds.has(itemId)) }))
+.filter(group => group.itemIds.length > 0);
+  }
+refreshCloseFurnitureWarnings();
+selected = null;
+multiSelectedIds = [];
+recordHistory(historyBefore);
+updateInspector();
+renderGroups();
+updateGroupSelectionUI();
+render();
+}
+
+function setTool(name) {
+tool = name;
+["select", "wall", "door", "room"].forEach(id => {
+const button = $(id);
+const active = id === name;
+button.classList.toggle("active", active);
+button.setAttribute("aria-pressed", String(active));
+});
+}
+
+/* --- Hit test for furniture handles --- */
+function hitTestFurniture(p) {
+if (selected?.kind === "furniture") {
+const selectedItems = selectedFurnitureIds().map(id => furniture.find(item => item.id === id)).filter(Boolean).reverse();
+for (const sel of selectedItems) {
+const local = toLocal(sel, p);
+// Blue rotation handle
+const rhY = -sel.d / 2 - 25 / scale;
+if (Math.abs(local.x) < 20 / scale && Math.abs(local.y - rhY) < 25 / scale) {
+return { handle: "rotate", f: sel };
+    }
+// Orange resize handle
+const shX = sel.w / 2, shY = sel.d / 2;
+if (Math.abs(local.x - shX) < 20 / scale && Math.abs(local.y - shY) < 20 / scale) {
+return { handle: "resize", f: sel };
+    }
+  }
+}
+for (const f of [...furniture].reverse()) {
+if (insideFurniture(p, f)) return { handle: null, f };
+  }
+return null;
+}
+
+function hitTestRoomHandle(m) {
+if (iso || selected?.kind !== "room") return null;
+const room = selectedObject();
+if (!room) return null;
+for (const [handle, point] of Object.entries(roomHandlePoints(roomBounds(room)))) {
+const p = screen(point);
+if (Math.hypot(m.x - p.x, m.y - p.y) <= 10) return { room, handle };
+  }
+return null;
+}
+
+function resizeRoomFromGesture(room, bounds, handle, point) {
+const target = snap(point);
+const minimum = gridStep();
+const next = { ...bounds };
+if (handle.includes("w")) next.left = Math.min(target.x, bounds.right - minimum);
+if (handle.includes("e")) next.right = Math.max(target.x, bounds.left + minimum);
+if (handle.includes("n")) next.top = Math.min(target.y, bounds.bottom - minimum);
+if (handle.includes("s")) next.bottom = Math.max(target.y, bounds.top + minimum);
+room.points = rectanglePoints({ x: next.left, y: next.top }, { x: next.right, y: next.bottom });
+}
+
+function hitTestWallEndpoint(m) {
+for (const wall of [...walls].reverse()) {
+for (const endpoint of ["b", "a"]) {
+if (joints.some(joint => distance(joint, wall[endpoint]) < EPS)) continue;
+const point = endpointScreenPoint(wall, endpoint);
+if (Math.hypot(m.x - point.x, m.y - point.y) <= 10) {
+return { wall, endpoint, point: { ...wall[endpoint] } };
+      }
+    }
+  }
+return null;
+}
+
+/* --- Pointer Events --- */
+canvas.addEventListener("pointerdown", e => {
+if (![0, 1, 2].includes(e.button)) return;
+updateGridModifier(e);
+e.preventDefault();
+const m = mouse(e), p = world(m);
+canvas.setPointerCapture(e.pointerId);
+
+if (iso) {
+if (e.button === 0) {
+gesture = { kind: "orbit", last: m };
+    } else {
+gesture = { kind: "pan", start: m, camera: { ...camera } };
+    }
+return;
+  }
+
+if (e.button !== 0 || space) {
+gesture = { kind: "pan", start: m, camera: { ...camera } };
+return;
+  }
+
+if (tool === "wall") {
+const snapped = snapWallPoint(p);
+draft = { a: snapped.point, b: snapped.point };
+activeSnap = snapped;
+gesture = { kind: "wall", historyBefore: captureHistoryState() };
+  } else if (tool === "room") {
+const start = snap(p);
+draft = { a: start, b: start, kind: "room" };
+gesture = { kind: "room", historyBefore: captureHistoryState() };
+  } else if (tool === "door") {
+addDoor(p);
+  } else {
+const historyBefore = captureHistoryState();
+const roomHandle = hitTestRoomHandle(m);
+const currentRoom = selected?.kind === "room" ? selectedObject() : null;
+const endpointHit = hitTestWallEndpoint(m);
+const hit = hitTestFurniture(p);
+if (roomHandle) {
+gesture = {
+kind: "roomResize", room: roomHandle.room, handle: roomHandle.handle,
+startBounds: roomBounds(roomHandle.room), historyBefore
+  };
+} else if (currentRoom && isPointInPoly(p, currentRoom.points)) {
+gesture = {
+kind: "roomMove", room: currentRoom, start: p,
+startPoints: currentRoom.points.map(point => ({ ...point })), historyBefore
+  };
+} else if (endpointHit) {
+multiSelectedIds = [];
+selected = { kind: "wall", id: endpointHit.wall.id, endpoint: endpointHit.endpoint };
+gesture = {
+kind: "endpoint", wallId: endpointHit.wall.id, endpoint: endpointHit.endpoint,
+displayOffset: endpointDisplayOffset(endpointHit.wall.id, endpointHit.endpoint, endpointHit.point),
+historyBefore
+  };
+updateInspector();
+} else if (hit?.handle && hit.f) {
+if (!selectedFurnitureIds().includes(hit.f.id)) multiSelectedIds = [];
+selected = { kind: "furniture", id: hit.f.id };
+const groupSnapshot = hit.handle === "rotate" || hit.handle === "resize" ? captureFurnitureTransform(hit.f.id) : null;
+const rotationCenter = groupSnapshot?.center || { x: hit.f.x, y: hit.f.y };
+gesture = {
+kind: hit.handle,
+id: hit.f.id,
+historyBefore,
+groupSnapshot,
+rotationCenter,
+startPointerAngle: Math.atan2(p.y - rotationCenter.y, p.x - rotationCenter.x),
+startAngle: hit.f.angle,
+before: { x: hit.f.x, y: hit.f.y, w: hit.f.w, d: hit.f.d, angle: hit.f.angle }
+      };
+    } else {
+const picked = pick(p);
+if (e.shiftKey && picked?.kind === "furniture") {
+toggleFurnitureSelection(picked.id);
+return;
+}
+if (!picked) {
+selected = null;
+multiSelectedIds = [];
+marquee = { start: p, end: p };
+gesture = { kind: "marquee", start: p };
+updateInspector();
+updateGroupSelectionUI();
+render();
+return;
+}
+if (picked.kind !== "furniture" || !selectedFurnitureIds().includes(picked.id)) multiSelectedIds = [];
+selected = picked;
+updateInspector();
+const o = selectedObject();
+if (selected?.kind === "furniture") {
+gesture = {
+kind: "furniture", object: o, offset: { x: p.x - o.x, y: p.y - o.y },
+groupSnapshot: captureFurnitureTransform(o.id), historyBefore
+  };
+      } else if (selected?.kind === "door") {
+gesture = { kind: "door", object: o, historyBefore };
+      } else if (selected?.kind === "wall") {
+    gesture = { kind: "wallMove", object: o, startA: { ...o.a }, startB: { ...o.b }, start: p, historyBefore };
+      } else if (selected?.kind === "joint") {
+    const connections = jointConnections(o);
+    gesture = {
+    kind: "joint", start: { x: o.x, y: o.y },
+    offset: { x: p.x - o.x, y: p.y - o.y },
+    endpoints: connections.endpoints, hostIds: connections.hosts.map(wall => wall.id), historyBefore
+        };
+      } else if (selected?.kind === "room") {
+gesture = {
+kind: "roomMove", room: o, start: p,
+startPoints: o.points.map(point => ({ ...point })), historyBefore
+  };
+      }
+    }
+updateGroupSelectionUI();
+render();
+  }
+});
+
+canvas.addEventListener("pointermove", e => {
+updateGridModifier(e);
+const m = mouse(e), p = world(m);
+
+if (tool === "wall" && !gesture && !iso) {
+activeSnap = snapWallPoint(p);
+render();
+  }
+
+if (!gesture) return;
+
+if (gesture.kind === "orbit") {
+const dx = m.x - gesture.last.x;
+azimuth += dx * 0.01;
+camera.x = width / 2;
+camera.y = height / 2;
+gesture.last = m;
+render();
+return;
+  }
+
+if (gesture.kind === "pan") {
+camera = {
+x: gesture.camera.x + m.x - gesture.start.x,
+y: gesture.camera.y + m.y - gesture.start.y
+    };
+  } else if (gesture.kind === "marquee") {
+marquee.end = p;
+  } else if (gesture.kind === "wall") {
+const snapped = snapWallPoint(p, draft.a, e.shiftKey);
+draft.b = snapped.point;
+activeSnap = snapped;
+draft.invalid = draftIntersectsWalls(draft.a, draft.b);
+  } else if (gesture.kind === "room") {
+draft.b = snap(p);
+  } else if (gesture.kind === "roomMove") {
+const step = gridStep();
+const dx = Math.round((p.x - gesture.start.x) / step) * step;
+const dy = Math.round((p.y - gesture.start.y) / step) * step;
+gesture.room.points = gesture.startPoints.map(point => ({ x: point.x + dx, y: point.y + dy }));
+  } else if (gesture.kind === "roomResize") {
+resizeRoomFromGesture(gesture.room, gesture.startBounds, gesture.handle, p);
+  } else if (gesture.kind === "wallMove") {
+const dx = Math.round((p.x - gesture.start.x) / gridStep()) * gridStep();
+const dy = Math.round((p.y - gesture.start.y) / gridStep()) * gridStep();
+gesture.object.a = { x: gesture.startA.x + dx, y: gesture.startA.y + dy };
+gesture.object.b = { x: gesture.startB.x + dx, y: gesture.startB.y + dy };
+if (dx || dy) clearDetachedWall(gesture.object.id);
+rebuildJoints();
+  } else if (gesture.kind === "joint") {
+let point = snap({ x: p.x - gesture.offset.x, y: p.y - gesture.offset.y });
+const hosts = gesture.hostIds.map(id => walls.find(wall => wall.id === id)).filter(Boolean);
+if (hosts.length === 1) point = projectOnWall(point, hosts[0]).point;
+if (hosts.length > 1) point = gesture.start;
+if (gesture.endpoints.length && distance(point, gesture.start) > EPS) {
+for (const reference of gesture.endpoints) {
+const wall = walls.find(item => item.id === reference.wallId);
+if (wall) wall[reference.endpoint] = { ...point };
+}
+rebuildJoints();
+selected = { kind: "joint", id: jointId(point) };
+    }
+  } else if (gesture.kind === "endpoint") {
+const wall = walls.find(item => item.id === gesture.wallId);
+if (wall) {
+const pointer = world({ x: m.x - gesture.displayOffset.x, y: m.y - gesture.displayOffset.y });
+const snapped = snapWallPoint(pointer, null, false, wall.id).point;
+const a = gesture.endpoint === "a" ? snapped : wall.a;
+const b = gesture.endpoint === "b" ? snapped : wall.b;
+const crossing = walls.some(other => other.id !== wall.id && segmentsProperIntersect(a, b, other.a, other.b));
+if (!crossing && distance(snapped, wall[gesture.endpoint]) > EPS) {
+clearDetachedEndpoint(wall.id, gesture.endpoint);
+wall[gesture.endpoint] = snapped;
+rebuildJoints();
+selected = { kind: "wall", id: wall.id, endpoint: gesture.endpoint };
+      }
+    }
+  } else if (gesture.kind === "furniture") {
+const q = snap({
+x: p.x - gesture.offset.x,
+y: p.y - gesture.offset.y
+    });
+if (gesture.groupSnapshot) {
+translateGroupFromSnapshot(gesture.groupSnapshot, gesture.object.id, q);
+} else {
+Object.assign(gesture.object, q);
+if (gesture.object.parentId) {
+const parent = furniture.find(item => item.id === gesture.object.parentId);
+if (parent) {
+const offset = toLocal(parent, q);
+if (Math.abs(offset.x) > parent.w / 2 || Math.abs(offset.y) > parent.d / 2) {
+delete gesture.object.parentId;
+delete gesture.object.surfaceOffset;
+} else {
+gesture.object.surfaceOffset = offset;
+      }
+} else {
+delete gesture.object.parentId;
+delete gesture.object.surfaceOffset;
+    }
+}
+if (gesture.object.supportsSurface) syncSurfaceChildren(gesture.object);
+  }
+  } else if (gesture.kind === "door") {
+const d = gesture.object;
+const w = walls.find(w => w.id === d.wallId);
+if (w) {
+const t = doorPosition(d, w, p);
+if (t !== null) d.t = t;
+    }
+  } else if (gesture.kind === "rotate") {
+const f = furniture.find(f => f.id === gesture.id);
+if (f) {
+const center = gesture.rotationCenter || f;
+const dx = p.x - center.x;
+const dy = p.y - center.y;
+const currentPointerAngle = Math.atan2(dy, dx);
+const delta = Math.atan2(
+Math.sin(currentPointerAngle - gesture.startPointerAngle),
+Math.cos(currentPointerAngle - gesture.startPointerAngle)
+  );
+if (gesture.groupSnapshot) rotateGroupFromSnapshot(gesture.groupSnapshot, delta);
+else f.angle = gesture.startAngle + delta;
+if (f.supportsSurface) syncSurfaceChildren(f);
+    }
+  } else if (gesture.kind === "resize") {
+const f = furniture.find(f => f.id === gesture.id);
+if (f) {
+  if (gesture.groupSnapshot) {
+  const root = gesture.groupSnapshot.members.find(member => member.id === gesture.id);
+  const local = toLocal(root, p);
+  scaleGroupFromSnapshot(gesture.groupSnapshot, gesture.id, Math.abs(local.x) * 2, Math.abs(local.y) * 2);
+  } else {
+  const local = toLocal(f, p);
+  f.w = Math.max(0.2, Math.abs(local.x) * 2);
+  f.d = Math.max(0.2, Math.abs(local.y) * 2);
+  if (f.supportsSurface) syncSurfaceChildren(f);
+    }
+updateInspector();
+    }
+  }
+render();
+});
+
+canvas.addEventListener("pointerup", e => {
+updateGridModifier(e);
+const completedClearanceTransform = ["furniture", "rotate", "resize", "door", "wallMove", "wall", "joint", "endpoint"].includes(gesture?.kind);
+if (gesture?.kind === "marquee" && marquee) {
+const selection = rectanglePoints(marquee.start, marquee.end);
+const area = Math.abs((marquee.end.x - marquee.start.x) * (marquee.end.y - marquee.start.y));
+if (area > EPS) {
+multiSelectedIds = furniture.filter(item => polygonsOverlap(footprint(item), selection)).map(item => item.id);
+selected = multiSelectedIds.length ? { kind: "furniture", id: multiSelectedIds[multiSelectedIds.length - 1] } : null;
+    }
+marquee = null;
+gesture = null;
+updateInspector();
+updateGroupSelectionUI();
+render();
+return;
+  }
+if (gesture?.kind === "room" && draft) {
+const roomWidth = Math.abs(draft.b.x - draft.a.x);
+const roomHeight = Math.abs(draft.b.y - draft.a.y);
+if (roomWidth >= gridStep() - EPS && roomHeight >= gridStep() - EPS) {
+const room = {
+id: uid(), name: `Room ${rooms.length + 1}`, color: "#bfe3d0",
+points: rectanglePoints(draft.a, draft.b)
+      };
+rooms.push(room);
+selected = { kind: "room", id: room.id };
+setTool("select");
+updateInspector();
+notify(`${room.name} created.`);
+    }
+  }
+if (gesture?.kind === "wall" && draft && distance(draft.a, draft.b) >= 0.1) {
+if (!draft.invalid && !draftIntersectsWalls(draft.a, draft.b)) {
+const w = { id: uid(), a: { ...draft.a }, b: { ...draft.b } };
+walls.push(w);
+rebuildJoints();
+selected = { kind: "wall", id: w.id };
+updateInspector();
+notify("Wall created with connected ends.");
+} else {
+notify("Wall cannot cross or overlap an existing wall.");
+    }
+  }
+if (gesture?.historyBefore) recordHistory(gesture.historyBefore);
+gesture = null;
+draft = null;
+activeSnap = null;
+if (completedClearanceTransform) refreshCloseFurnitureWarnings();
+render();
+});
+
+canvas.addEventListener("pointercancel", () => {
+if (gesture?.historyBefore) {
+restoreHistoryState(gesture.historyBefore);
+return;
+  }
+gesture = null; draft = null; marquee = null; activeSnap = null; render();
+});
+
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+
+canvas.addEventListener("wheel", e => {
+if (gesture) return;
+const pinchZoom = e.ctrlKey || e.metaKey;
+const wheelZoom = e.deltaMode !== 0 || Math.abs(e.deltaY) >= 50;
+const zoomSensitivity = pinchZoom ? 0.005 : 0.001;
+if (!pinchZoom && !wheelZoom) {
+e.preventDefault();
+camera.x -= e.deltaX;
+camera.y -= e.deltaY;
+render();
+return;
+  }
+e.preventDefault();
+const m = mouse(e);
+if (!iso) {
+const anchor = world(m);
+scale = Math.max(60, Math.min(1600, scale * Math.exp(-e.deltaY * zoomSensitivity)));
+const after = screen(anchor);
+camera.x += m.x - after.x;
+camera.y += m.y - after.y;
+  } else {
+scale = Math.max(60, Math.min(1600, scale * Math.exp(-e.deltaY * zoomSensitivity)));
+camera.x = width / 2;
+camera.y = height / 2;
+  }
+render();
+}, { passive: false });
+
+for (const [type, f] of Object.entries(catalog)) {
+const item = document.createElement("div");
+item.className = "item";
+item.draggable = true;
+item.innerHTML = `${f.name}<small>${f.w} × ${f.d} m</small>`;
+item.addEventListener("dragstart", e => {
+e.dataTransfer.setData("text/plain", type);
+e.dataTransfer.effectAllowed = "copy";
+  });
+$("palette").appendChild(item);
+}
+
+canvas.addEventListener("dragover", e => {
+if (!iso) {
+e.preventDefault();
+e.dataTransfer.dropEffect = "copy";
+  }
+});
+
+canvas.addEventListener("drop", e => {
+e.preventDefault();
+updateGridModifier(e);
+if (iso) return;
+const type = e.dataTransfer.getData("text/plain");
+const p = snap(world(mouse(e)));
+let f;
+
+if (type === "custom_maker") {
+f = { ...createCustomFurnitureData(), id: uid(), x: p.x, y: p.y, angle: 0 };
+  } else if (Object.hasOwn(catalog, type)) {
+f = { ...catalog[type], id: uid(), type, x: p.x, y: p.y, angle: 0 };
+  } else {
+return;
+  }
+
+const historyBefore = captureHistoryState();
+if (!tryAttachSurfaceItem(f, p)) {
+  furniture.push(f);
+  selected = { kind: "furniture", id: f.id };
+  setTool("select");
+  updateInspector();
+  notify(`${f.name} added. Drag to move; press R to rotate.`);
+} else {
+  furniture.push(f);
+  selected = { kind: "furniture", id: f.id };
+  setTool("select");
+  updateInspector();
+  notify(`${f.name} placed on a supported surface.`);
+}
+multiSelectedIds = [];
+updateGroupSelectionUI();
+recordHistory(historyBefore);
+refreshCloseFurnitureWarnings();
+render();
+});
+
+["select", "wall", "door", "room"].forEach(id => $(id).onclick = () => setTool(id));
+$("grid").onchange = render;
+$("furnitureClearance").addEventListener("change", e => {
+const value = parseFloat(e.target.value);
+if (!Number.isFinite(value) || value < 0 || value > 5) {
+e.target.value = String(FURNITURE_CLEARANCE);
+return;
+  }
+FURNITURE_CLEARANCE = value;
+refreshCloseFurnitureWarnings();
+render();
+});
+$("undo").onclick = undo;
+$("redo").onclick = redo;
+$("rotate").onclick = rotateSelected;
+$("remove").onclick = deleteSelected;
+$("fit").onclick = fitView;
+$("dismissClearanceWarning").onclick = dismissCloseFurnitureWarnings;
+$ ("detachJoint").addEventListener("pointerdown", e => e.stopPropagation());
+$("detachJoint").onclick = () => {
+const joint = selected?.kind === "joint" ? selectedObject() : null;
+if (joint) detachJoint(joint);
+};
+
+$("createGroup").onclick = () => {
+if ($("createGroup").disabled) return;
+$("groupNameForm").hidden = false;
+$("groupNameInput").focus();
+};
+$("confirmGroup").onclick = createFurnitureGroup;
+$("cancelGroup").onclick = () => {
+$("groupNameInput").value = "";
+$("groupNameForm").hidden = true;
+};
+$("groupNameInput").addEventListener("keydown", e => {
+if (e.key === "Enter") { e.preventDefault(); createFurnitureGroup(); }
+if (e.key === "Escape") { $("cancelGroup").click(); }
+});
+
+function setPanelExpanded(panelId, bodyId, buttonId, label, expanded) {
+const panel = $(panelId), body = $(bodyId), button = $(buttonId);
+refreshCloseFurnitureWarnings();
+body.hidden = !expanded;
+panel.classList.toggle("is-collapsed", !expanded);
+button.setAttribute("aria-expanded", String(expanded));
+button.setAttribute("aria-label", `${expanded ? "Collapse" : "Expand"} ${label}`);
+button.textContent = expanded ? "−" : "+";
+}
+
+function makeOverlayDraggable(panel, handle) {
+if (!panel || !handle) return;
+let drag = null;
+handle.addEventListener("pointerdown", e => {
+if (e.button !== 0 || e.target.closest("button, input, select, textarea")) return;
+const stageRect = $("stage").getBoundingClientRect();
+const panelRect = panel.getBoundingClientRect();
+drag = { pointerId: e.pointerId, offsetX: e.clientX - panelRect.left, offsetY: e.clientY - panelRect.top, stageRect };
+handle.setPointerCapture(e.pointerId);
+e.preventDefault();
+});
+handle.addEventListener("pointermove", e => {
+if (!drag || drag.pointerId !== e.pointerId) return;
+const maxLeft = Math.max(0, drag.stageRect.width - panel.offsetWidth);
+const maxTop = Math.max(0, drag.stageRect.height - panel.offsetHeight);
+const left = Math.max(0, Math.min(maxLeft, e.clientX - drag.stageRect.left - drag.offsetX));
+const top = Math.max(0, Math.min(maxTop, e.clientY - drag.stageRect.top - drag.offsetY));
+panel.style.left = `${left}px`;
+panel.style.top = `${top}px`;
+panel.style.right = "auto";
+panel.style.bottom = "auto";
+panel.dataset.dragged = "true";
+panel.style.zIndex = "10";
+});
+const stopDragging = e => { if (drag?.pointerId === e.pointerId) drag = null; };
+handle.addEventListener("pointerup", stopDragging);
+handle.addEventListener("pointercancel", stopDragging);
+}
+
+function clampOverlayPositions() {
+const stageRect = $("stage").getBoundingClientRect();
+for (const panel of document.querySelectorAll('[data-dragged="true"]')) {
+const maxLeft = Math.max(0, stageRect.width - panel.offsetWidth);
+const maxTop = Math.max(0, stageRect.height - panel.offsetHeight);
+const left = Math.max(0, Math.min(maxLeft, panel.offsetLeft));
+const top = Math.max(0, Math.min(maxTop, panel.offsetTop));
+panel.style.left = `${left}px`;
+panel.style.top = `${top}px`;
+  }
+}
+
+renderGroups();
+initPriceEstimator();   // ✅ Price estimator initialized here
+
+$("view").onclick = () => {
+iso = !iso;
+gesture = null; draft = null; activeSnap = null;
+$("view").dataset.tooltip = iso ? "Back to 2D editing" : "3D preview";
+$("view").setAttribute("aria-label", $("view").dataset.tooltip);
+$("view").setAttribute("aria-pressed", String(iso));
+notify(iso ? "3D preview: left‑drag rotate around room, right‑drag pan, wheel zoom. Walls are transparent." : "2D editing enabled.");
+fitView();
+};
+
+function designData() {
+return { version: 5, units: "metres", serial, walls, doors, furniture, joints, detachedConnections, rooms, groups };
+}
+
+function isValidRoom(room) {
+return !!room && typeof room.id === "string" && typeof room.name === "string" &&
+typeof room.color === "string" && /^#[0-9a-f]{6}$/i.test(room.color) &&
+Array.isArray(room.points) && room.points.length === 4 &&
+room.points.every(point => Number.isFinite(point.x) && Number.isFinite(point.y));
+}
+
+function isValidJoint(joint) {
+return !!joint && typeof joint.id === "string" && Number.isFinite(joint.x) && Number.isFinite(joint.y);
+}
+
+function isValidDetachedConnection(connection) {
+return !!connection && Number.isFinite(connection.point?.x) && Number.isFinite(connection.point?.y) &&
+Array.isArray(connection.endpoints) && connection.endpoints.every(reference =>
+typeof reference.wallId === "string" && ["a", "b"].includes(reference.endpoint)) &&
+Array.isArray(connection.hostWallIds) && connection.hostWallIds.every(id => typeof id === "string");
+}
+
+function isValidFurnitureGroup(group) {
+return !!group && typeof group.id === "string" && typeof group.name === "string" && group.name.trim().length > 0 &&
+typeof group.color === "string" && /^#[0-9a-f]{6}$/i.test(group.color) &&
+typeof group.transformTogether === "boolean" && typeof group.collapsed === "boolean" &&
+Array.isArray(group.itemIds) && group.itemIds.every(id => typeof id === "string");
+}
+
+$("save").onclick = () => {
+try {
+localStorage.setItem("interior-designer-v5", JSON.stringify(designData()));
+notify("Saved in this browser on this device.");
+  } catch {
+notify("Browser storage is unavailable. Use Export JSON instead.");
+  }
+};
+
+$("load").onclick = () => {
+try {
+const raw = localStorage.getItem("interior-designer-v5") ||
+localStorage.getItem("interior-designer-v4") ||
+localStorage.getItem("interior-designer-v3") ||
+localStorage.getItem("interior-designer-v1") ||
+localStorage.getItem("interior-designer-v2");
+if (!raw) { notify("No saved design was found in this browser."); return; }
+const data = JSON.parse(raw);
+if (![1, 2, 3, 4, 5].includes(data.version) || !Array.isArray(data.walls) ||
+!Array.isArray(data.doors) || !Array.isArray(data.furniture)) {
+throw new Error("Invalid save");
+    }
+if (data.joints !== undefined &&
+(!Array.isArray(data.joints) || !data.joints.every(isValidJoint))) {
+throw new Error("Invalid joint data");
+  }
+if (data.detachedConnections !== undefined &&
+(!Array.isArray(data.detachedConnections) || !data.detachedConnections.every(isValidDetachedConnection))) {
+throw new Error("Invalid detached connection data");
+    }
+if (data.groups !== undefined &&
+(!Array.isArray(data.groups) || !data.groups.every(isValidFurnitureGroup))) {
+throw new Error("Invalid furniture group data");
+  }
+if (data.rooms !== undefined &&
+(!Array.isArray(data.rooms) || !data.rooms.every(isValidRoom))) {
+throw new Error("Invalid room data");
+    }
+if (!confirm("Replace the current layout with your saved design?")) return;
+  const historyBefore = captureHistoryState();
+closeFurniturePairs = [];
+dismissedClosePairKeys.clear();
+walls = data.walls; doors = data.doors; furniture = data.furniture;
+joints = data.joints || [];
+detachedConnections = data.detachedConnections || [];
+rooms = data.rooms || [];
+const assignedFurnitureIds = new Set();
+groups = (data.groups || []).map(group => ({
+...group,
+itemIds: group.itemIds.filter(id => furniture.some(item => item.id === id) && !assignedFurnitureIds.has(id) && assignedFurnitureIds.add(id))
+})).filter(group => group.itemIds.length > 0);
+serial = Number.isSafeInteger(data.serial) && data.serial >= 0 ? data.serial : 0;
+if (data.joints === undefined) rebuildJoints();
+selected = null; multiSelectedIds = []; gesture = null; draft = null; marquee = null;
+  recordHistory(historyBefore);
+updateInspector();
+renderGroups();
+refreshCloseFurnitureWarnings();
+fitView(); notify("Saved design loaded.");
+  } catch {
+notify("Could not load the saved design.");
+  }
+};
+
+$("export").onclick = () => {
+const blob = new Blob([JSON.stringify(designData(), null, 2)], { type: "application/json" });
+const url = URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url; a.download = "interior-design.json"; a.click();
+setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+$("clear").onclick = () => {
+if (!confirm("Clear the current design?")) return;
+const historyBefore = captureHistoryState();
+walls = []; doors = []; furniture = []; joints = []; detachedConnections = []; rooms = []; groups = [];
+closeFurniturePairs = [];
+dismissedClosePairKeys.clear();
+selected = null; multiSelectedIds = []; gesture = null; draft = null; marquee = null; activeSnap = null;
+recordHistory(historyBefore);
+updateInspector();
+renderGroups();
+updateGroupSelectionUI();
+fitView();
+};
+
+function editingText(e) {
+return ["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName);
+}
+
+window.addEventListener("keydown", e => {
+if (editingText(e)) return;
+updateGridModifier(e);
+if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+const key = e.key.toLowerCase();
+if (key === "z") {
+e.preventDefault();
+if (e.shiftKey) redo(); else undo();
+return;
+    }
+if (key === "y") { e.preventDefault(); redo(); return; }
+  }
+if (e.key === "1") { setTool("select"); e.preventDefault(); return; }
+if (e.key === "2") { setTool("wall"); e.preventDefault(); return; }
+if (e.key === "3") { setTool("door"); e.preventDefault(); return; }
+if (e.key === "4") { setTool("room"); e.preventDefault(); return; }
+if (e.code === "Space") { space = true; e.preventDefault(); }
+if (e.key === "Delete" || e.key === "Backspace") {
+e.preventDefault(); deleteSelected();
+  }
+if (e.key.toLowerCase() === "r") rotateSelected();
+if (e.key === "Escape") {
+if (gesture?.historyBefore) {
+restoreHistoryState(gesture.historyBefore);
+} else {
+gesture = null; draft = null; selected = null; activeSnap = null;
+updateInspector();
+render();
+    }
+  }
+});
+
+window.addEventListener("keyup", e => {
+updateGridModifier(e);
+if (e.code === "Space") space = false;
+});
+
+window.addEventListener("blur", () => {
+if (gesture?.historyBefore) recordHistory(gesture.historyBefore);
+space = false; gesture = null; draft = null; activeSnap = null;
+updateGridModifier({ ctrlKey: false, metaKey: false, altKey: false });
+render();
+});
+
+// Starter room: 5 m × 4 m
+const corners = [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 5, y: 4 }, { x: 0, y: 4 }];
+walls = corners.map((a, i) => ({
+id: uid(), a: { ...a }, b: { ...corners[(i + 1) % 4] }
+}));
+rebuildJoints();
+doors.push({ id: uid(), wallId: walls[2].id, t: 0.25, width: 0.8, swing: 1 });
+furniture.push(
+  { ...catalog.sofa, id: uid(), type: "sofa", x: 1.5, y: 0.8, angle: 0 },
+  { ...catalog.table, id: uid(), type: "table", x: 1.5, y: 2.1, angle: 0 },
+  { ...catalog.bed, id: uid(), type: "bed", x: 3.9, y: 1.3, angle: 0 }
+);
+
+let firstResize = true;
+new ResizeObserver(() => {
+const rect = $("stage").getBoundingClientRect();
+const oldWidth = width, oldHeight = height;
+width = rect.width; height = rect.height;
+const sizeShrank = width < oldWidth || height < oldHeight;
+const dpr = window.devicePixelRatio || 1;
+canvas.width = Math.round(width * dpr);
+canvas.height = Math.round(height * dpr);
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+if (firstResize || sizeShrank) {
+firstResize = false;
+fitView();
+  } else {
+camera.x += (width - oldWidth) / 2;
+camera.y += (height - oldHeight) / 2;
+render();
+  }
+}).observe($("stage"));
+</script>
+</body>
+</html>
